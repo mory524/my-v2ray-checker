@@ -30,7 +30,6 @@
             margin: 0 auto;
         }
 
-        /* Header */
         .header {
             text-align: center;
             margin-bottom: 30px;
@@ -51,7 +50,6 @@
             font-size: 0.9em;
         }
 
-        /* Tabs */
         .tabs {
             display: flex;
             gap: 10px;
@@ -81,7 +79,6 @@
             background: #45475a;
         }
 
-        /* Tab Content */
         .tab-content {
             display: none;
             animation: fadeIn 0.3s ease;
@@ -91,7 +88,6 @@
             display: block;
         }
 
-        /* Cards */
         .card {
             background: #313244;
             border-radius: 16px;
@@ -99,7 +95,6 @@
             margin-bottom: 20px;
         }
 
-        /* Buttons */
         .btn {
             padding: 12px 24px;
             border: none;
@@ -136,7 +131,6 @@
             filter: brightness(1.05);
         }
 
-        /* Progress Bar */
         .progress-bar {
             width: 100%;
             height: 8px;
@@ -153,7 +147,6 @@
             transition: width 0.3s ease;
         }
 
-        /* Results List */
         .results-list {
             max-height: 400px;
             overflow-y: auto;
@@ -178,7 +171,6 @@
             opacity: 0.5;
         }
 
-        /* QR Grid */
         .qr-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -207,11 +199,10 @@
         }
 
         .qr-code canvas {
-            width: 150px;
-            height: 150px;
+            width: 120px;
+            height: 120px;
         }
 
-        /* Textarea */
         textarea {
             width: 100%;
             padding: 12px;
@@ -224,7 +215,6 @@
             resize: vertical;
         }
 
-        /* Status Bar */
         .status-bar {
             background: #45475a;
             padding: 10px 15px;
@@ -234,7 +224,6 @@
             text-align: center;
         }
 
-        /* Animations */
         @keyframes fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
@@ -251,32 +240,14 @@
             }
         }
 
-        /* Loading Spinner */
-        .spinner {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid #45475a;
-            border-top-color: #89b4fa;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* Responsive */
         @media (max-width: 768px) {
             body {
                 padding: 10px;
             }
-            
             .tab-btn {
                 padding: 10px;
                 font-size: 0.85em;
             }
-            
             .qr-grid {
                 grid-template-columns: 1fr;
             }
@@ -411,7 +382,7 @@
             try {
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 3000);
-                const response = await fetch(`https://httpbin.org/ip`, {
+                await fetch(`https://httpbin.org/ip`, {
                     mode: 'no-cors',
                     signal: controller.signal
                 });
@@ -507,7 +478,7 @@
                     const { host, port, name } = extracted;
                     const { alive, latency } = await testConnection(host, port);
                     
-                    if (alive && latency) {
+                    if (alive && latency !== null) {
                         activeConfigs.push({ latency, config, host, port, name });
                         addLog(`✅ زنده: ${host}:${port} - ${latency}ms`, 'success');
                     } else {
@@ -589,6 +560,32 @@
             updateStatus(`✅ تست دستی کامل شد - ${liveCount} کانفیگ زنده`);
         }
 
+        // تابع ایمن ساخت QR Code
+        function createQRCode(elementId, text) {
+            try {
+                const container = document.getElementById(elementId);
+                if (!container) return false;
+                container.innerHTML = '';
+                let qrText = text;
+                if (qrText.length > 2000) {
+                    qrText = qrText.substring(0, 1900) + '...';
+                }
+                new QRCode(container, {
+                    text: qrText,
+                    width: 120,
+                    height: 120,
+                    colorDark: "#000000",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.M
+                });
+                return true;
+            } catch(e) {
+                console.error('QR Error:', e);
+                document.getElementById(elementId).innerHTML = '<div style="font-size:11px;color:red;">❌ QR failed</div>';
+                return false;
+            }
+        }
+
         // به‌روزرسانی 5 کانفیگ برتر
         function refreshTopConfigs() {
             const grid = document.getElementById('topGrid');
@@ -604,66 +601,57 @@
                 const rank = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`;
                 const rankColor = i === 0 ? '#f9e2af' : '#89b4fa';
                 
+                const qrId = `qr-${i}-${Date.now()}-${Math.random()}`;
                 const card = document.createElement('div');
                 card.className = 'qr-card';
                 card.innerHTML = `
-                    <h3 style="color: ${rankColor};">${rank} ${c.name || 'Unknown'}</h3>
+                    <h3 style="color: ${rankColor};">${rank} ${escapeHtml(c.name) || 'Unknown'}</h3>
                     <p>📍 ${c.host}:${c.port}</p>
                     <p>⚡ تاخیر: ${c.latency}ms</p>
-                    <div class="qr-code" id="qr-${i}"></div>
+                    <div class="qr-code" id="${qrId}"></div>
                     <div style="margin-top: 10px;">
-                        <button class="btn btn-primary" onclick="copyConfig('${c.config.replace(/'/g, "\\'")}')">📋 کپی کانفیگ</button>
-                        <button class="btn btn-success" onclick="saveSingleQR(${i}, '${c.host}')">💾 ذخیره QR</button>
+                        <button class="btn btn-primary" onclick="copyConfig('${escapeHtml(c.config).replace(/'/g, "\\'")}')">📋 کپی کانفیگ</button>
+                        <button class="btn btn-success" onclick="saveSingleQR('${c.host}')">💾 ذخیره QR</button>
                     </div>
-                    <p style="font-size: 0.7em; margin-top: 10px; word-break: break-all;">${c.config.substring(0, 60)}...</p>
+                    <p style="font-size: 0.7em; margin-top: 10px; word-break: break-all;">${escapeHtml(c.config.substring(0, 60))}...</p>
                 `;
                 grid.appendChild(card);
                 
-                // ساخت QR Code
-              function createQRCode(elementId, text) {
-    try {
-        // پاک کردن محتوای قبلی
-        const container = document.getElementById(elementId);
-        if (!container) return false;
-        
-        container.innerHTML = '';
-        
-        // محدود کردن طول متن برای QR (حداکثر 2953 کاراکتر برای نسخه 40)
-        if (text.length > 2000) {
-            // اگر کانفیگ خیلی طولانی بود، فقط قسمت مهم را نگه دار
-            text = text.substring(0, 1900) + '...';
+                setTimeout(() => {
+                    createQRCode(qrId, c.config);
+                }, 100);
+            }
         }
-        
-        // ساخت QR Code
-        new QRCode(container, {
-            text: text,
-            width: 120,
-            height: 120,
-            colorDark: "#000000",
-            colorLight: "#ffffff",
-            correctLevel: QRCode.CorrectLevel.M
-        });
-        return true;
-    } catch(e) {
-        console.error('QR Error:', e);
-        document.getElementById(elementId).innerHTML = '<div style="font-size:11px;color:red;">❌ QR failed</div>';
-        return false;
-    }
-}
+
+        // ابزار کمکی برای escape کاراکترهای خاص
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
+                return c;
+            });
+        }
 
         // کپی کانفیگ
         function copyConfig(config) {
-            navigator.clipboard.writeText(config);
-            updateStatus('✅ کانفیگ در کلیپ‌بورد کپی شد!');
-            alert('کانفیگ کپی شد!');
+            navigator.clipboard.writeText(config).then(() => {
+                updateStatus('✅ کانفیگ در کلیپ‌بورد کپی شد!');
+                alert('کانفیگ کپی شد!');
+            }).catch(() => {
+                alert('خطا در کپی');
+            });
         }
 
         // ذخیره یک QR
-        function saveSingleQR(index, host) {
+        function saveSingleQR(host) {
             alert('در نسخه وب، برای ذخیره QR از دکمه ذخیره همه استفاده کنید یا اسکرین‌شات بگیرید.');
         }
 
-        // ذخیره همه QR (اسکرین‌شوت)
+        // ذخیره همه QR
         function saveAllQRCodes() {
             alert('در نسخه وب، می‌توانید از صفحه اسکرین‌شات بگیرید یا از دکمه کپی استفاده کنید.');
         }
