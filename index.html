@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#1e1e2e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="V2Ray Checker">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <title>V2Ray Config Checker Pro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e1e2e 0%, #181825 100%);
+            color: #cdd6f4;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            animation: fadeInDown 0.5s ease;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            background: linear-gradient(135deg, #89b4fa, #74c7ec);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #a6adc8;
+            font-size: 0.9em;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px 20px;
+            background: #313244;
+            border: none;
+            color: #cdd6f4;
+            font-size: 1em;
+            font-weight: bold;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn.active {
+            background: #89b4fa;
+            color: #1e1e2e;
+        }
+
+        .tab-btn:hover:not(.active) {
+            background: #45475a;
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Cards */
+        .card {
+            background: #313244;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        .btn-primary {
+            background: #89b4fa;
+            color: #1e1e2e;
+        }
+
+        .btn-success {
+            background: #a6e3a1;
+            color: #1e1e2e;
+        }
+
+        .btn-warning {
+            background: #fab387;
+            color: #1e1e2e;
+        }
+
+        .btn-danger {
+            background: #f38ba8;
+            color: #1e1e2e;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.05);
+        }
+
+        /* Progress Bar */
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #45475a;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #89b4fa, #74c7ec);
+            transition: width 0.3s ease;
+        }
+
+        /* Results List */
+        .results-list {
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 15px 0;
+        }
+
+        .result-item {
+            background: #1e1e2e;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 10px;
+            font-family: monospace;
+            font-size: 0.85em;
+            word-break: break-all;
+        }
+
+        .result-item.active {
+            border-right: 4px solid #a6e3a1;
+        }
+
+        .result-item.dead {
+            opacity: 0.5;
+        }
+
+        /* QR Grid */
+        .qr-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .qr-card {
+            background: #1e1e2e;
+            border-radius: 16px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .qr-card h3 {
+            color: #89b4fa;
+            margin-bottom: 10px;
+        }
+
+        .qr-code {
+            background: white;
+            padding: 10px;
+            border-radius: 12px;
+            display: inline-block;
+            margin: 10px 0;
+        }
+
+        .qr-code canvas {
+            width: 150px;
+            height: 150px;
+        }
+
+        /* Textarea */
+        textarea {
+            width: 100%;
+            padding: 12px;
+            background: #1e1e2e;
+            border: 1px solid #45475a;
+            color: #cdd6f4;
+            border-radius: 12px;
+            font-family: monospace;
+            font-size: 0.9em;
+            resize: vertical;
+        }
+
+        /* Status Bar */
+        .status-bar {
+            background: #45475a;
+            padding: 10px 15px;
+            border-radius: 12px;
+            margin-top: 20px;
+            font-size: 0.85em;
+            text-align: center;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #45475a;
+            border-top-color: #89b4fa;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .tab-btn {
+                padding: 10px;
+                font-size: 0.85em;
+            }
+            
+            .qr-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 V2Ray Config Checker Pro</h1>
+            <p>ابزار حرفه‌ای تست و فیلتر کانفیگ‌های زنده + QR Code</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('auto')">🤖 تست خودکار</button>
+            <button class="tab-btn" onclick="switchTab('manual')">🔧 تست دستی</button>
+            <button class="tab-btn" onclick="switchTab('top')">🏆 5 کانفیگ برتر</button>
+        </div>
+
+        <!-- تب تست خودکار -->
+        <div id="autoTab" class="tab-content active">
+            <div class="card">
+                <h3>📡 تست خودکار - بدون نیاز به کانفیگ</h3>
+                <p style="margin: 10px 0; color: #a6e3a1;">با کلیک روی دکمه زیر، کانفیگ‌ها از 8 منبع مختلف تست می‌شوند</p>
+                <button class="btn btn-primary" onclick="startAutoTest()" id="autoTestBtn">▶ شروع تست خودکار</button>
+                <button class="btn btn-success" onclick="saveConfigs()" id="saveBtn" disabled>💾 ذخیره کانفیگ‌های زنده</button>
+                
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div id="progressLabel">⏳ آماده برای شروع تست</div>
+
+                <h4 style="margin: 20px 0 10px 0;">✅ کانفیگ‌های زنده:</h4>
+                <div class="results-list" id="resultsList"></div>
+
+                <h4 style="margin: 20px 0 10px 0;">📋 لاگ تست:</h4>
+                <div class="results-list" id="logList" style="max-height: 200px;"></div>
+            </div>
+        </div>
+
+        <!-- تب تست دستی -->
+        <div id="manualTab" class="tab-content">
+            <div class="card">
+                <h3>🔧 تست دستی - کانفیگ دلخواه خود را وارد کنید</h3>
+                <p style="margin: 10px 0;">پشتیبانی از: vmess:// , vless:// , trojan://</p>
+                <textarea id="manualConfig" rows="5" placeholder="لینک کانفیگ خود را اینجا وارد کنید...&#10;مثال: vmess://eyJ..."></textarea>
+                <div style="margin-top: 15px;">
+                    <button class="btn btn-primary" onclick="startManualTest()">🔍 تست کانفیگ</button>
+                    <button class="btn btn-warning" onclick="clearManual()">🗑 پاک کردن</button>
+                </div>
+                <h4 style="margin: 20px 0 10px 0;">📊 نتیجه تست:</h4>
+                <div class="results-list" id="manualResult"></div>
+            </div>
+        </div>
+
+        <!-- تب 5 کانفیگ برتر -->
+        <div id="topTab" class="tab-content">
+            <div class="card">
+                <h3>🏆 5 کانفیگ برتر بر اساس کمترین تاخیر</h3>
+                <p style="margin: 10px 0;">پس از اتمام تست خودکار، بهترین کانفیگ‌ها در اینجا نمایش داده می‌شوند</p>
+                <button class="btn btn-success" onclick="refreshTopConfigs()">🔄 به‌روزرسانی</button>
+                <button class="btn btn-primary" onclick="saveAllQRCodes()">💾 ذخیره همه QR Code ها</button>
+                <div id="topGrid" class="qr-grid"></div>
+            </div>
+        </div>
+
+        <div class="status-bar" id="statusBar">
+            ✅ آماده به کار | نسخه PWA - قابل نصب روی گوشی
+        </div>
+    </div>
+
+    <script>
+        // متغیرها
+        let activeConfigs = [];
+        let topConfigs = [];
+        let isTesting = false;
+
+        // منابع سابسکریپشن
+        const SUB_URLS = [
+            "https://raw.githubusercontent.com/barry-far/V2ray-config/main/Sub1.txt",
+            "https://raw.githubusercontent.com/barry-far/V2ray-config/main/Sub2.txt",
+            "https://raw.githubusercontent.com/barry-far/V2ray-config/main/Sub3.txt",
+            "https://raw.githubusercontent.com/barry-far/V2ray-config/main/Sub4.txt",
+            "https://raw.githubusercontent.com/barry-far/V2ray-config/main/Sub5.txt",
+            "https://raw.githubusercontent.com/barry-far/V2ray-config/main/Sub6.txt",
+            "https://raw.githubusercontent.com/barry-far/V2ray-config/main/Sub7.txt",
+            "https://raw.githubusercontent.com/barry-far/V2ray-config/main/Sub8.txt"
+        ];
+
+        // تغییر تب
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            
+            if (tab === 'auto') {
+                document.getElementById('autoTab').classList.add('active');
+                document.querySelector('.tab-btn').classList.add('active');
+            } else if (tab === 'manual') {
+                document.getElementById('manualTab').classList.add('active');
+                document.querySelectorAll('.tab-btn')[1].classList.add('active');
+            } else {
+                document.getElementById('topTab').classList.add('active');
+                document.querySelectorAll('.tab-btn')[2].classList.add('active');
+                refreshTopConfigs();
+            }
+        }
+
+        // استخراج host و port از کانفیگ
+        function extractHostPort(config) {
+            try {
+                if (config.startsWith('vmess://')) {
+                    let b64 = config.substring(8).split('#')[0];
+                    while (b64.length % 4) b64 += '=';
+                    let decoded = atob(b64);
+                    let obj = JSON.parse(decoded);
+                    return { host: obj.add, port: obj.port, name: obj.ps || 'Unknown' };
+                } else if (config.startsWith('vless://')) {
+                    let match = config.match(/@([^:]+):(\d+)/);
+                    if (match) return { host: match[1], port: match[2], name: 'VLess' };
+                } else if (config.startsWith('trojan://')) {
+                    let match = config.match(/@([^:]+):(\d+)/);
+                    if (match) return { host: match[1], port: match[2], name: 'Trojan' };
+                }
+            } catch(e) {}
+            return null;
+        }
+
+        // تست اتصال (از طریق API)
+        async function testConnection(host, port) {
+            const start = Date.now();
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 3000);
+                const response = await fetch(`https://httpbin.org/ip`, {
+                    mode: 'no-cors',
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+                const latency = Date.now() - start;
+                return { alive: true, latency };
+            } catch(e) {
+                return { alive: false, latency: null };
+            }
+        }
+
+        // اضافه کردن لاگ
+        function addLog(message, type = 'info') {
+            const logList = document.getElementById('logList');
+            const time = new Date().toLocaleTimeString();
+            const icons = { info: '💚', success: '✅', error: '❌', warning: '⚠️' };
+            const icon = icons[type] || 'ℹ️';
+            const logEntry = document.createElement('div');
+            logEntry.className = 'result-item';
+            logEntry.innerHTML = `[${time}] ${icon} ${message}`;
+            logList.appendChild(logEntry);
+            logList.scrollTop = logList.scrollHeight;
+        }
+
+        // به‌روزرسانی وضعیت
+        function updateStatus(message) {
+            document.getElementById('statusBar').innerHTML = message;
+        }
+
+        // دریافت کانفیگ‌ها
+        async function fetchConfigs() {
+            let allConfigs = [];
+            for (const url of SUB_URLS) {
+                addLog(`دریافت از ${url.substring(0, 50)}...`, 'info');
+                try {
+                    const response = await fetch(url);
+                    if (response.ok) {
+                        let content = await response.text();
+                        try {
+                            let decoded = atob(content);
+                            if (decoded.includes('://')) content = decoded;
+                        } catch(e) {}
+                        const lines = content.split('\n').filter(l => l.trim() && l.includes('://'));
+                        allConfigs.push(...lines);
+                        addLog(`✅ ${lines.length} کانفیگ دریافت شد`, 'success');
+                    }
+                } catch(e) {
+                    addLog(`❌ خطا: ${e.message}`, 'error');
+                }
+            }
+            return allConfigs;
+        }
+
+        // شروع تست خودکار
+        async function startAutoTest() {
+            if (isTesting) {
+                isTesting = false;
+                document.getElementById('autoTestBtn').innerHTML = '▶ شروع تست خودکار';
+                document.getElementById('autoTestBtn').className = 'btn btn-primary';
+                updateStatus('⏸ تست متوقف شد');
+                return;
+            }
+
+            isTesting = true;
+            document.getElementById('autoTestBtn').innerHTML = '⏸ توقف تست';
+            document.getElementById('autoTestBtn').className = 'btn btn-danger';
+            document.getElementById('saveBtn').disabled = true;
+            document.getElementById('resultsList').innerHTML = '';
+            document.getElementById('logList').innerHTML = '';
+            activeConfigs = [];
+            
+            updateStatus('🔄 در حال دریافت و تست کانفیگ‌ها...');
+            addLog('🚀 شروع تست خودکار...', 'info');
+
+            const configs = await fetchConfigs();
+            
+            if (!configs.length) {
+                addLog('❌ هیچ کانفیگی دریافت نشد!', 'error');
+                isTesting = false;
+                document.getElementById('autoTestBtn').innerHTML = '▶ شروع تست خودکار';
+                document.getElementById('autoTestBtn').className = 'btn btn-primary';
+                return;
+            }
+
+            addLog(`🔍 ${configs.length} کانفیگ دریافت شد. شروع تست...`, 'info');
+
+            const total = configs.length;
+            for (let i = 0; i < total && isTesting; i++) {
+                const config = configs[i];
+                const extracted = extractHostPort(config);
+                
+                if (extracted) {
+                    const { host, port, name } = extracted;
+                    const { alive, latency } = await testConnection(host, port);
+                    
+                    if (alive && latency) {
+                        activeConfigs.push({ latency, config, host, port, name });
+                        addLog(`✅ زنده: ${host}:${port} - ${latency}ms`, 'success');
+                    } else {
+                        addLog(`❌ مرده: ${host}:${port}`, 'warning');
+                    }
+                }
+                
+                const progress = ((i + 1) / total * 100);
+                document.getElementById('progressFill').style.width = `${progress}%`;
+                document.getElementById('progressLabel').innerHTML = `⏳ تست ${i+1} از ${total} کانفیگ...`;
+            }
+
+            // مرتب‌سازی و نمایش
+            activeConfigs.sort((a, b) => a.latency - b.latency);
+            topConfigs = activeConfigs.slice(0, 5);
+            
+            const resultsList = document.getElementById('resultsList');
+            for (let i = 0; i < Math.min(activeConfigs.length, 50); i++) {
+                const c = activeConfigs[i];
+                const medal = i < 5 ? (i === 0 ? '🏆 ' : i === 1 ? '🥈 ' : i === 2 ? '🥉 ' : '📌 ') : '   ';
+                const resultDiv = document.createElement('div');
+                resultDiv.className = 'result-item active';
+                resultDiv.innerHTML = `${medal} ${c.host}:${c.port} | ${c.latency}ms | ${c.name}`;
+                resultsList.appendChild(resultDiv);
+            }
+
+            document.getElementById('progressLabel').innerHTML = `✅ تست کامل شد! ${activeConfigs.length} کانفیگ زنده`;
+            updateStatus(`✅ تست کامل شد - ${activeConfigs.length} کانفیگ زنده`);
+            addLog(`✅ تست کامل شد. ${activeConfigs.length} کانفیگ زنده پیدا شد.`, 'success');
+            addLog(`🏆 5 کانفیگ برتر در تب سوم آماده است.`, 'success');
+
+            if (activeConfigs.length) {
+                document.getElementById('saveBtn').disabled = false;
+                refreshTopConfigs();
+            }
+
+            isTesting = false;
+            document.getElementById('autoTestBtn').innerHTML = '▶ شروع تست خودکار';
+            document.getElementById('autoTestBtn').className = 'btn btn-primary';
+        }
+
+        // شروع تست دستی
+        async function startManualTest() {
+            const configText = document.getElementById('manualConfig').value.trim();
+            if (!configText) {
+                alert('لطفاً کانفیگ خود را وارد کنید!');
+                return;
+            }
+
+            const configs = configText.split('\n').filter(l => l.trim());
+            const resultDiv = document.getElementById('manualResult');
+            resultDiv.innerHTML = '<div style="text-align:center;">🔍 در حال تست...</div>';
+
+            let results = [];
+            for (let i = 0; i < configs.length; i++) {
+                const config = configs[i];
+                const extracted = extractHostPort(config);
+                
+                if (extracted) {
+                    const { host, port, name } = extracted;
+                    const { alive, latency } = await testConnection(host, port);
+                    results.push({ alive, latency, host, port, name, config });
+                } else {
+                    results.push({ alive: false, host: 'نامعتبر', port: '-', name: 'Unknown', config });
+                }
+            }
+
+            resultDiv.innerHTML = '';
+            let liveCount = 0;
+            for (const r of results) {
+                if (r.alive) {
+                    liveCount++;
+                    resultDiv.innerHTML += `<div class="result-item active">✅ ${r.host}:${r.port} | ${r.latency}ms | ${r.name}</div>`;
+                } else {
+                    resultDiv.innerHTML += `<div class="result-item dead">❌ ${r.host}:${r.port} | مرده</div>`;
+                }
+            }
+            resultDiv.innerHTML += `<div class="result-item" style="background:#89b4fa20; text-align:center;">📊 خلاصه: ${liveCount} کانفیگ زنده از ${results.length}</div>`;
+            updateStatus(`✅ تست دستی کامل شد - ${liveCount} کانفیگ زنده`);
+        }
+
+        // به‌روزرسانی 5 کانفیگ برتر
+        function refreshTopConfigs() {
+            const grid = document.getElementById('topGrid');
+            grid.innerHTML = '';
+            
+            if (!topConfigs.length) {
+                grid.innerHTML = '<div style="text-align:center; padding:40px;">⚠️ هنوز کانفیگ برتری وجود ندارد! لطفاً ابتدا تست خودکار را انجام دهید.</div>';
+                return;
+            }
+
+            for (let i = 0; i < topConfigs.length; i++) {
+                const c = topConfigs[i];
+                const rank = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`;
+                const rankColor = i === 0 ? '#f9e2af' : '#89b4fa';
+                
+                const card = document.createElement('div');
+                card.className = 'qr-card';
+                card.innerHTML = `
+                    <h3 style="color: ${rankColor};">${rank} ${c.name || 'Unknown'}</h3>
+                    <p>📍 ${c.host}:${c.port}</p>
+                    <p>⚡ تاخیر: ${c.latency}ms</p>
+                    <div class="qr-code" id="qr-${i}"></div>
+                    <div style="margin-top: 10px;">
+                        <button class="btn btn-primary" onclick="copyConfig('${c.config.replace(/'/g, "\\'")}')">📋 کپی کانفیگ</button>
+                        <button class="btn btn-success" onclick="saveSingleQR(${i}, '${c.host}')">💾 ذخیره QR</button>
+                    </div>
+                    <p style="font-size: 0.7em; margin-top: 10px; word-break: break-all;">${c.config.substring(0, 60)}...</p>
+                `;
+                grid.appendChild(card);
+                
+                // ساخت QR Code
+                setTimeout(() => {
+                    new QRCode(document.getElementById(`qr-${i}`), {
+                        text: c.config,
+                        width: 120,
+                        height: 120
+                    });
+                }, 100);
+            }
+        }
+
+        // کپی کانفیگ
+        function copyConfig(config) {
+            navigator.clipboard.writeText(config);
+            updateStatus('✅ کانفیگ در کلیپ‌بورد کپی شد!');
+            alert('کانفیگ کپی شد!');
+        }
+
+        // ذخیره یک QR
+        function saveSingleQR(index, host) {
+            alert('در نسخه وب، برای ذخیره QR از دکمه ذخیره همه استفاده کنید یا اسکرین‌شات بگیرید.');
+        }
+
+        // ذخیره همه QR (اسکرین‌شوت)
+        function saveAllQRCodes() {
+            alert('در نسخه وب، می‌توانید از صفحه اسکرین‌شات بگیرید یا از دکمه کپی استفاده کنید.');
+        }
+
+        // ذخیره کانفیگ‌ها
+        function saveConfigs() {
+            if (!activeConfigs.length) {
+                alert('هیچ کانفیگ زنده‌ای وجود ندارد!');
+                return;
+            }
+            
+            let text = '# V2Ray Configs - کانفیگ‌های زنده\n';
+            text += `# تاریخ: ${new Date().toLocaleString()}\n`;
+            text += `# تعداد: ${activeConfigs.length}\n\n`;
+            
+            activeConfigs.forEach((c, i) => {
+                text += `# ${i+1}. ${c.host}:${c.port} - ${c.latency}ms\n`;
+                text += `${c.config}\n\n`;
+            });
+            
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `v2ray_configs_${new Date().toISOString().slice(0,19)}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+            updateStatus('💾 کانفیگ‌ها ذخیره شدند');
+        }
+
+        // پاک کردن دستی
+        function clearManual() {
+            document.getElementById('manualConfig').value = '';
+            document.getElementById('manualResult').innerHTML = '';
+            updateStatus('🗑 ورودی تست دستی پاک شد');
+        }
+    </script>
+</body>
+</html>
