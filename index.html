@@ -620,15 +620,36 @@
                 grid.appendChild(card);
                 
                 // ساخت QR Code
-                setTimeout(() => {
-                    new QRCode(document.getElementById(`qr-${i}`), {
-                        text: c.config,
-                        width: 120,
-                        height: 120
-                    });
-                }, 100);
-            }
+              function createQRCode(elementId, text) {
+    try {
+        // پاک کردن محتوای قبلی
+        const container = document.getElementById(elementId);
+        if (!container) return false;
+        
+        container.innerHTML = '';
+        
+        // محدود کردن طول متن برای QR (حداکثر 2953 کاراکتر برای نسخه 40)
+        if (text.length > 2000) {
+            // اگر کانفیگ خیلی طولانی بود، فقط قسمت مهم را نگه دار
+            text = text.substring(0, 1900) + '...';
         }
+        
+        // ساخت QR Code
+        new QRCode(container, {
+            text: text,
+            width: 120,
+            height: 120,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.M
+        });
+        return true;
+    } catch(e) {
+        console.error('QR Error:', e);
+        document.getElementById(elementId).innerHTML = '<div style="font-size:11px;color:red;">❌ QR failed</div>';
+        return false;
+    }
+}
 
         // کپی کانفیگ
         function copyConfig(config) {
