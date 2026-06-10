@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="V2Ray Checker Pro">
-    <title>V2Ray Config Checker Pro - نسخه Real Test</title>
+    <title>V2Ray Config Checker Pro - نسخه Real Test با تنظیمات</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -18,7 +18,7 @@
             min-height: 100vh;
         }
         .container { max-width: 1200px; margin: 0 auto; }
-        .header { text-align: center; margin-bottom: 30px; }
+        .header { text-align: center; margin-bottom: 30px; position: relative; }
         .header h1 {
             font-size: 2em;
             background: linear-gradient(135deg, #89b4fa, #74c7ec);
@@ -36,12 +36,97 @@
             font-weight: bold;
             margin-top: 8px;
         }
-        .tabs {
+        /* دکمه چرخ‌دنده */
+        .settings-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #313244;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            padding: 12px;
+            border-radius: 50%;
+            width: 55px;
+            height: 55px;
             display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 1000;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
+        .settings-btn:hover { transform: rotate(30deg); background: #89b4fa; }
+        /* مودال تنظیمات */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: #1e1e2e;
+            border-radius: 20px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 20px;
+            border: 1px solid #45475a;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #45475a;
+        }
+        .modal-header h2 { color: #89b4fa; }
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 28px;
+            color: #f38ba8;
+            cursor: pointer;
+        }
+        .settings-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #313244;
+            border-radius: 12px;
+        }
+        .settings-section h3 { color: #89b4fa; margin-bottom: 10px; }
+        .checkbox-group { display: flex; flex-wrap: wrap; gap: 15px; }
+        .checkbox-group label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+        select, input {
+            background: #1e1e2e;
+            border: 1px solid #45475a;
+            color: #cdd6f4;
+            padding: 8px 12px;
+            border-radius: 8px;
+            width: 100%;
+            margin-top: 5px;
+        }
+        .save-settings {
+            background: #a6e3a1;
+            color: #1e1e2e;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 15px;
+        }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
         .tab-btn {
             flex: 1;
             padding: 12px 20px;
@@ -53,10 +138,7 @@
             cursor: pointer;
             transition: all 0.3s ease;
         }
-        .tab-btn.active {
-            background: #89b4fa;
-            color: #1e1e2e;
-        }
+        .tab-btn.active { background: #89b4fa; color: #1e1e2e; }
         .tab-content { display: none; animation: fadeIn 0.3s ease; }
         .tab-content.active { display: block; }
         .card {
@@ -79,25 +161,9 @@
         .btn-success { background: #a6e3a1; color: #1e1e2e; }
         .btn-danger { background: #f38ba8; color: #1e1e2e; }
         .btn:hover { transform: translateY(-2px); filter: brightness(1.05); }
-        .progress-bar {
-            width: 100%;
-            height: 8px;
-            background: #45475a;
-            border-radius: 10px;
-            overflow: hidden;
-            margin: 15px 0;
-        }
-        .progress-fill {
-            width: 0%;
-            height: 100%;
-            background: linear-gradient(90deg, #89b4fa, #74c7ec);
-            transition: width 0.3s ease;
-        }
-        .results-list {
-            max-height: 400px;
-            overflow-y: auto;
-            margin: 15px 0;
-        }
+        .progress-bar { width: 100%; height: 8px; background: #45475a; border-radius: 10px; overflow: hidden; margin: 15px 0; }
+        .progress-fill { width: 0%; height: 100%; background: linear-gradient(90deg, #89b4fa, #74c7ec); transition: width 0.3s ease; }
+        .results-list { max-height: 400px; overflow-y: auto; margin: 15px 0; }
         .result-item {
             background: #1e1e2e;
             padding: 12px;
@@ -107,33 +173,11 @@
             font-size: 0.85em;
             word-break: break-all;
         }
-        .result-item.verified {
-            border-right: 4px solid #a6e3a1;
-            background: #313244;
-        }
-        .result-item.dead {
-            opacity: 0.5;
-            text-decoration: line-through;
-        }
-        .qr-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
-        }
-        .qr-card {
-            background: #1e1e2e;
-            border-radius: 16px;
-            padding: 15px;
-            text-align: center;
-        }
-        .qr-code {
-            background: white;
-            padding: 10px;
-            border-radius: 12px;
-            display: inline-block;
-            margin: 10px 0;
-        }
+        .result-item.verified { border-right: 4px solid #a6e3a1; background: #313244; }
+        .result-item.dead { opacity: 0.5; text-decoration: line-through; }
+        .qr-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 20px; }
+        .qr-card { background: #1e1e2e; border-radius: 16px; padding: 15px; text-align: center; }
+        .qr-code { background: white; padding: 10px; border-radius: 12px; display: inline-block; margin: 10px 0; }
         .qr-code canvas { width: 120px; height: 120px; }
         textarea {
             width: 100%;
@@ -152,14 +196,12 @@
             margin-top: 20px;
             text-align: center;
         }
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @media (max-width: 768px) {
             body { padding: 10px; }
             .tab-btn { padding: 10px; font-size: 0.85em; }
             .qr-grid { grid-template-columns: 1fr; }
+            .settings-btn { bottom: 15px; right: 15px; width: 50px; height: 50px; font-size: 24px; }
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
@@ -168,7 +210,7 @@
     <div class="container">
         <div class="header">
             <h1>🚀 V2Ray Config Checker Pro</h1>
-            <p>نسخه Real Test | تست واقعی از طریق سرور واسط</p>
+            <p>نسخه Real Test | تست واقعی از طریق سرور واسط + تنظیمات پیشرفته</p>
             <span class="badge">✓ تست واقعی | ✓ 100% تضمینی | ✓ بدون خطای -1</span>
         </div>
 
@@ -224,13 +266,69 @@
         </div>
     </div>
 
+    <!-- دکمه چرخ‌دنده تنظیمات -->
+    <button class="settings-btn" onclick="openSettings()">⚙️</button>
+
+    <!-- مودال تنظیمات -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⚙️ تنظیمات پیشرفته</h2>
+                <button class="close-modal" onclick="closeSettings()">✕</button>
+            </div>
+            
+            <div class="settings-section">
+                <h3>📡 پروتکل‌های مجاز</h3>
+                <div class="checkbox-group">
+                    <label><input type="checkbox" id="protoVmess" checked> VMess</label>
+                    <label><input type="checkbox" id="ProtoVless" checked> VLESS</label>
+                    <label><input type="checkbox" id="protoTrojan" checked> Trojan</label>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3>🌐 آدرس سرور واسط (API)</h3>
+                <input type="text" id="apiUrl" value="https://v2ray-validator.onrender.com">
+                <p style="font-size: 0.7em; color: #a6adc8; margin-top: 5px;">آدرس سروری که تست واقعی را انجام می‌دهد</p>
+            </div>
+
+            <div class="settings-section">
+                <h3>🔢 حداکثر تعداد کانفیگ برای جستجو</h3>
+                <select id="maxConfigs">
+                    <option value="100">۱۰۰ کانفیگ (سریع)</option>
+                    <option value="500">۵۰۰ کانفیگ (متوسط)</option>
+                    <option value="1000" selected>۱۰۰۰ کانفیگ (پیش‌فرض)</option>
+                    <option value="5000">۵۰۰۰ کانفیگ (کامل)</option>
+                </select>
+            </div>
+
+            <div class="settings-section">
+                <h3>⏱️ حداکثر زمان تست (میلی‌ثانیه)</h3>
+                <select id="maxLatency">
+                    <option value="5000">۵ ثانیه (پیش‌فرض)</option>
+                    <option value="10000">۱۰ ثانیه (کامل)</option>
+                    <option value="30000">۳۰ ثانیه (آهسته)</option>
+                </select>
+            </div>
+
+            <button class="save-settings" onclick="saveSettings()">💾 ذخیره تنظیمات</button>
+        </div>
+    </div>
+
     <script>
-        // آدرس API سرور واسط شما
-        const API_URL = "https://v2ray-validator.onrender.com";
+        // آدرس API سرور واسط (پیش‌فرض)
+        let API_URL = "https://v2ray-validator.onrender.com";
         
         let activeConfigs = [];
         let topConfigs = [];
         let isTesting = false;
+        
+        // تنظیمات
+        let settings = {
+            protocols: { vmess: true, vless: true, trojan: true },
+            maxConfigs: 1000,
+            maxLatency: 5000
+        };
 
         const SUB_URLS = [
             "https://raw.githubusercontent.com/barry-far/V2ray-config/main/Sub1.txt",
@@ -242,6 +340,54 @@
             "https://raw.githubusercontent.com/barry-far/V2ray-config/main/Sub7.txt",
             "https://raw.githubusercontent.com/barry-far/V2ray-config/main/Sub8.txt"
         ];
+
+        // بارگذاری تنظیمات ذخیره شده
+        function loadSettings() {
+            const saved = localStorage.getItem('v2ray_real_settings');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    settings = { ...settings, ...parsed };
+                    if (parsed.apiUrl) API_URL = parsed.apiUrl;
+                } catch(e) {}
+            }
+            updateSettingsUI();
+        }
+
+        // ذخیره تنظیمات
+        function saveSettings() {
+            settings.protocols = {
+                vmess: document.getElementById('protoVmess').checked,
+                vless: document.getElementById('ProtoVless').checked,
+                trojan: document.getElementById('protoTrojan').checked
+            };
+            settings.maxConfigs = parseInt(document.getElementById('maxConfigs').value);
+            settings.maxLatency = parseInt(document.getElementById('maxLatency').value);
+            settings.apiUrl = document.getElementById('apiUrl').value;
+            API_URL = settings.apiUrl;
+            
+            localStorage.setItem('v2ray_real_settings', JSON.stringify(settings));
+            closeSettings();
+            updateStatus('✅ تنظیمات ذخیره شد!');
+        }
+
+        function updateSettingsUI() {
+            document.getElementById('protoVmess').checked = settings.protocols.vmess;
+            document.getElementById('ProtoVless').checked = settings.protocols.vless;
+            document.getElementById('protoTrojan').checked = settings.protocols.trojan;
+            document.getElementById('apiUrl').value = API_URL;
+            document.getElementById('maxConfigs').value = settings.maxConfigs;
+            document.getElementById('maxLatency').value = settings.maxLatency;
+        }
+
+        function openSettings() {
+            updateSettingsUI();
+            document.getElementById('settingsModal').classList.add('active');
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsModal').classList.remove('active');
+        }
 
         function switchTab(tab) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
@@ -266,16 +412,39 @@
                     while (b64.length % 4) b64 += '=';
                     let decoded = atob(b64);
                     let obj = JSON.parse(decoded);
-                    return { host: obj.add, port: obj.port, name: obj.ps || 'VMess', type: 'vmess', fullConfig: config };
+                    return { host: obj.add, port: obj.port, name: obj.ps || 'VMess', type: 'vmess' };
                 } else if (config.startsWith('vless://')) {
                     let match = config.match(/@([^:]+):(\d+)/);
-                    if (match) return { host: match[1], port: match[2], name: 'VLESS', type: 'vless', fullConfig: config };
+                    if (match) return { host: match[1], port: match[2], name: 'VLESS', type: 'vless' };
                 } else if (config.startsWith('trojan://')) {
                     let match = config.match(/@([^:]+):(\d+)/);
-                    if (match) return { host: match[1], port: match[2], name: 'Trojan', type: 'trojan', fullConfig: config };
+                    if (match) return { host: match[1], port: match[2], name: 'Trojan', type: 'trojan' };
                 }
             } catch(e) {}
             return null;
+        }
+
+        function isProtocolAllowed(config) {
+            if (config.startsWith('vmess://')) return settings.protocols.vmess;
+            if (config.startsWith('vless://')) return settings.protocols.vless;
+            if (config.startsWith('trojan://')) return settings.protocols.trojan;
+            return false;
+        }
+
+        // بیدار کردن سرور واسط
+        async function wakeUpServer() {
+            try {
+                const response = await fetch(`${API_URL}/health`);
+                if (response.ok) {
+                    addLog('✅ سرور واسط بیدار است', 'success');
+                    return true;
+                }
+            } catch(e) {
+                addLog('⚠️ در حال بیدار کردن سرور واسط... لطفاً ۵ ثانیه صبر کنید', 'warning');
+                await new Promise(resolve => setTimeout(resolve, 5000));
+                return true;
+            }
+            return true;
         }
 
         // تست واقعی از طریق سرور واسط
@@ -284,7 +453,7 @@
                 const response = await fetch(`${API_URL}/test-config`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ config: config, timeout: 10 })
+                    body: JSON.stringify({ config: config, timeout: settings.maxLatency / 1000 })
                 });
                 const result = await response.json();
                 return result;
@@ -322,13 +491,18 @@
                             if (decoded.includes('://')) content = decoded;
                         } catch(e) {}
                         let lines = content.split('\n').filter(l => l.trim() && (l.includes('vmess://') || l.includes('vless://') || l.includes('trojan://')));
+                        lines = lines.filter(line => isProtocolAllowed(line));
                         allConfigs.push(...lines);
                         addLog(`✅ ${lines.length} کانفیگ دریافت شد`, 'success');
                     }
                 } catch(e) {
                     addLog(`❌ خطا در دریافت: ${e.message}`, 'error');
                 }
-                if (allConfigs.length >= 500) break;
+                if (allConfigs.length >= settings.maxConfigs) {
+                    allConfigs = allConfigs.slice(0, settings.maxConfigs);
+                    addLog(`⚠️ محدود کردن به ${settings.maxConfigs} کانفیگ`, 'warning');
+                    break;
+                }
             }
             return allConfigs;
         }
@@ -350,10 +524,13 @@
             document.getElementById('logList').innerHTML = '';
             activeConfigs = [];
             
-            updateStatus('🔄 در حال تست واقعی کانفیگ‌ها...');
+            updateStatus('🔄 در حال بیدار کردن سرور واسط...');
             addLog('🔐 شروع تست واقعی از طریق سرور واسط', 'verified');
             addLog(`🌐 آدرس API: ${API_URL}`, 'info');
-
+            
+            // بیدار کردن سرور
+            await wakeUpServer();
+            
             const configs = await fetchConfigs();
             
             if (!configs.length) {
@@ -513,7 +690,7 @@
                     <h3 style="color: ${rankColor};">${rank} ${c.name} (${c.type})</h3>
                     <p>📍 ${c.host}:${c.port}</p>
                     <p>⚡ تاخیر واقعی: ${c.latency}ms</p>
-                    <p style="color:#a6e3a1;">✓ تأیید شده با تست واقعی از سرور واسط</p>
+                    <p style="color:#a6e3a1;">✓ تأیید شده با تست واقعی</p>
                     <div class="qr-code" id="${qrId}"></div>
                     <div style="margin-top: 10px;">
                         <button class="btn btn-primary" onclick="copyConfig('${c.config.replace(/'/g, "\\'")}')">📋 کپی کانفیگ</button>
@@ -568,6 +745,9 @@
             document.getElementById('manualResult').innerHTML = '';
             updateStatus('🗑 ورودی تست دستی پاک شد');
         }
+
+        // بارگذاری تنظیمات هنگام شروع
+        loadSettings();
     </script>
 </body>
 </html>
