@@ -200,7 +200,39 @@
             color: #a6adc8;
             margin-top: 5px;
         }
+        .server-status {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75em;
+            font-weight: bold;
+            background: #313244;
+        }
+        .server-status.online { background: #a6e3a120; color: #a6e3a1; border-right: 3px solid #a6e3a1; }
+        .server-status.waking { background: #fab38720; color: #fab387; border-right: 3px solid #fab387; }
+        .spinner-small {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid #45475a;
+            border-top-color: #89b4fa;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            vertical-align: middle;
+            margin-left: 5px;
+        }
+        .spinner {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 3px solid #45475a;
+            border-top-color: #89b4fa;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes spin { to { transform: rotate(360deg); } }
         @media (max-width: 768px) {
             body { padding: 10px; }
             .tab-btn { padding: 10px; font-size: 0.85em; }
@@ -216,6 +248,7 @@
             <h1>🚀 V2Ray Config Checker Pro</h1>
             <p>نسخه Real Test | تست واقعی از طریق سرور واسط + تنظیمات پیشرفته</p>
             <span class="badge">✓ تست واقعی | ✓ 100% تضمینی | ✓ بدون خطای -1</span>
+            <div id="serverStatus" class="server-status waking">🟡 در حال بررسی سرور...</div>
         </div>
 
         <div class="tabs">
@@ -230,7 +263,7 @@
                 <h3>📡 تست خودکار با Real Test</h3>
                 <p style="margin: 10px 0; color: #a6e3a1;">✅ تست واقعی از طریق سرور واسط - فقط کانفیگ‌هایی که واقعاً کار می‌کنند</p>
                 <p style="margin: 10px 0; font-size: 0.85em; color: #fab387;">⚙️ این تب از تنظیمات (پروتکل، تعداد، تاخیر) تبعیت می‌کند</p>
-                <button class="btn btn-primary" onclick="startAutoTest()" id="autoTestBtn">▶ شروع تست واقعی</button>
+                <button class="btn btn-primary" id="autoTestBtn">▶ شروع تست واقعی</button>
                 <button class="btn btn-success" onclick="saveConfigs()" id="saveBtn" disabled>💾 ذخیره کانفیگ‌های تضمینی</button>
                 
                 <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
@@ -328,15 +361,28 @@
         </div>
     </div>
 
+    <!-- مودال وضعیت سرور -->
+    <div id="serverStatusModal" class="modal">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <div class="modal-header">
+                <h2>🌐 وضعیت سرور رابط</h2>
+                <button class="close-modal" onclick="closeServerStatusModal()">✕</button>
+            </div>
+            <div id="serverStatusDetails" style="padding: 20px;">
+                <div class="spinner"></div>
+                <p style="margin-top: 15px;">در حال بررسی وضعیت سرور...</p>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // آدرس API سرور واسط (پیش‌فرض)
+        // ==================== تنظیمات اولیه ====================
         let API_URL = "https://v2ray-validator.onrender.com";
-        
         let activeConfigs = [];
         let topConfigs = [];
         let isTesting = false;
+        let isWakingUp = false;  // جلوگیری از بیدار شدن همزمان
         
-        // تنظیمات (فقط برای تست خودکار)
         let settings = {
             protocols: { vmess: true, vless: true, trojan: true },
             maxConfigs: 1000,
@@ -354,71 +400,309 @@
             "https://raw.githubusercontent.com/barry-far/V2ray-config/main/Sub8.txt"
         ];
 
-        // بارگذاری تنظیمات ذخیره شده
-        function loadSettings() {
-            const saved = localStorage.getItem('v2ray_real_settings');
-            if (saved) {
-                try {
-                    const parsed = JSON.parse(saved);
-                    settings = { ...settings, ...parsed };
-                    if (parsed.apiUrl) API_URL = parsed.apiUrl;
-                } catch(e) {}
+        // ==================== توابع کمکی ====================
+        async function fetchWithTimeout(url, options = {}, timeout = 10000) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), timeout);
+            try {
+                const response = await fetch(url, { ...options, signal: controller.signal });
+                clearTimeout(timeoutId);
+                return response;
+            } catch(e) {
+                clearTimeout(timeoutId);
+                throw e;
             }
-            updateSettingsUI();
         }
 
-        // ذخیره تنظیمات
-        function saveSettings() {
-            settings.protocols = {
-                vmess: document.getElementById('protoVmess').checked,
-                vless: document.getElementById('ProtoVless').checked,
-                trojan: document.getElementById('protoTrojan').checked
-            };
-            settings.maxConfigs = parseInt(document.getElementById('maxConfigs').value);
-            settings.maxLatency = parseInt(document.getElementById('maxLatency').value);
-            settings.apiUrl = document.getElementById('apiUrl').value;
-            API_URL = settings.apiUrl;
+        function addLog(message, type = 'info', isManual = false) {
+            const logList = isManual ? document.getElementById('manualResult') : document.getElementById('logList');
+            if (!logList) return;
+            const time = new Date().toLocaleTimeString();
+            const icons = { info: '💚', success: '✅', error: '❌', warning: '⚠️', verified: '🔐' };
+            const icon = icons[type] || 'ℹ️';
             
-            localStorage.setItem('v2ray_real_settings', JSON.stringify(settings));
-            closeSettings();
-            updateStatus('✅ تنظیمات ذخیره شد!');
-        }
-
-        function updateSettingsUI() {
-            document.getElementById('protoVmess').checked = settings.protocols.vmess;
-            document.getElementById('ProtoVless').checked = settings.protocols.vless;
-            document.getElementById('protoTrojan').checked = settings.protocols.trojan;
-            document.getElementById('apiUrl').value = API_URL;
-            document.getElementById('maxConfigs').value = settings.maxConfigs;
-            document.getElementById('maxLatency').value = settings.maxLatency;
-        }
-
-        function openSettings() {
-            updateSettingsUI();
-            document.getElementById('settingsModal').classList.add('active');
-        }
-
-        function closeSettings() {
-            document.getElementById('settingsModal').classList.remove('active');
-        }
-
-        function switchTab(tab) {
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            if (tab === 'auto') {
-                document.getElementById('autoTab').classList.add('active');
-                document.querySelector('.tab-btn').classList.add('active');
-            } else if (tab === 'manual') {
-                document.getElementById('manualTab').classList.add('active');
-                document.querySelectorAll('.tab-btn')[1].classList.add('active');
+            if (isManual) {
+                logList.innerHTML += `<div class="result-item">[${time}] ${icon} ${message}</div>`;
+                logList.scrollTop = logList.scrollHeight;
             } else {
-                document.getElementById('topTab').classList.add('active');
-                document.querySelectorAll('.tab-btn')[2].classList.add('active');
+                const logEntry = document.createElement('div');
+                logEntry.className = 'result-item';
+                logEntry.innerHTML = `[${time}] ${icon} ${message}`;
+                logList.appendChild(logEntry);
+                logList.scrollTop = logList.scrollHeight;
+            }
+        }
+
+        function updateStatus(message) {
+            document.getElementById('statusBar').innerHTML = message;
+        }
+
+        // ==================== وضعیت سرور ====================
+        async function checkAndWakeServer(showModal = true) {
+            if (isWakingUp) {
+                addLog('⏳ در حال بیدار کردن سرور... لطفاً صبر کنید', 'warning');
+                return false;
+            }
+            
+            isWakingUp = true;
+            
+            // نمایش مودال
+            if (showModal) {
+                const modal = document.getElementById('serverStatusModal');
+                modal.classList.add('active');
+                document.getElementById('serverStatusDetails').innerHTML = `
+                    <div class="spinner"></div>
+                    <p style="margin-top: 15px;">🔄 در حال بیدار کردن سرور رابط...</p>
+                    <p style="font-size: 0.8em; margin-top: 10px;">این عمل ممکن است 10-15 ثانیه طول بکشد</p>
+                `;
+            }
+            
+            // به‌روزرسانی وضعیت در هدر
+            const statusDiv = document.getElementById('serverStatus');
+            statusDiv.innerHTML = '<span class="spinner-small"></span> در حال بیدار کردن سرور...';
+            statusDiv.className = 'server-status waking';
+            
+            let success = false;
+            
+            for (let attempt = 1; attempt <= 4; attempt++) {
+                try {
+                    addLog(`🔄 تلاش ${attempt}/4 برای بیدار کردن سرور...`, 'info');
+                    
+                    if (showModal) {
+                        document.getElementById('serverStatusDetails').innerHTML = `
+                            <div class="spinner"></div>
+                            <p>🔄 تلاش ${attempt}/4 برای بیدار کردن سرور...</p>
+                            <p style="font-size: 0.8em;">زمان تقریبی: 10-15 ثانیه</p>
+                        `;
+                    }
+                    
+                    // درخواست با timeout 15 ثانیه
+                    await fetchWithTimeout(`${API_URL}/health`, { method: 'GET' }, 15000);
+                    
+                    success = true;
+                    addLog(`✅ سرور رابط با موفقیت بیدار شد (تلاش ${attempt})`, 'success');
+                    break;
+                    
+                } catch(e) {
+                    addLog(`⚠️ تلاش ${attempt} ناموفق: ${e.message}`, 'warning');
+                    if (attempt < 4) {
+                        await new Promise(r => setTimeout(r, 2000));
+                    }
+                }
+            }
+            
+            if (success) {
+                statusDiv.innerHTML = '🟢 سرور واسط فعال است';
+                statusDiv.className = 'server-status online';
+                updateStatus('✅ سرور رابط فعال - آماده برای تست');
+                
+                if (showModal) {
+                    document.getElementById('serverStatusDetails').innerHTML = `
+                        <div style="font-size: 48px;">🟢</div>
+                        <h3 style="color: #a6e3a1;">سرور فعال است</h3>
+                        <p>✅ آماده برای تست واقعی</p>
+                    `;
+                    setTimeout(() => closeServerStatusModal(), 1500);
+                }
+            } else {
+                statusDiv.innerHTML = '🔴 سرور در دسترس نیست';
+                statusDiv.className = 'server-status waking';
+                updateStatus('❌ سرور رابط در دسترس نیست');
+                
+                if (showModal) {
+                    document.getElementById('serverStatusDetails').innerHTML = `
+                        <div style="font-size: 48px;">🔴</div>
+                        <h3 style="color: #f38ba8;">سرور در دسترس نیست</h3>
+                        <p>لطفاً بعداً تلاش کنید</p>
+                        <button class="btn btn-primary" onclick="location.reload()" style="margin-top: 15px;">🔄 تلاش مجدد</button>
+                    `;
+                }
+            }
+            
+            isWakingUp = false;
+            return success;
+        }
+
+        function closeServerStatusModal() {
+            document.getElementById('serverStatusModal').classList.remove('active');
+        }
+
+        // ==================== شروع تست خودکار با بیدار کردن سرور ====================
+        async function startAutoTestWithWake() {
+            if (isTesting) {
+                // اگر در حال تست است، تست را متوقف کن
+                isTesting = false;
+                document.getElementById('autoTestBtn').innerHTML = '▶ شروع تست واقعی';
+                document.getElementById('autoTestBtn').className = 'btn btn-primary';
+                updateStatus('⏸ تست متوقف شد');
+                return;
+            }
+            
+            // ابتدا سرور را بیدار کن
+            const serverReady = await checkAndWakeServer(true);
+            
+            if (!serverReady) {
+                alert('❌ سرور رابط در دسترس نیست!\nلطفاً چند دقیقه دیگر تلاش کنید.');
+                return;
+            }
+            
+            // بعد از بیدار شدن، تست را شروع کن
+            startAutoTest();
+        }
+
+        // ==================== تست خودکار ====================
+        async function startAutoTest() {
+            if (isTesting) return;
+            
+            isTesting = true;
+            document.getElementById('autoTestBtn').innerHTML = '⏸ توقف تست';
+            document.getElementById('autoTestBtn').className = 'btn btn-danger';
+            document.getElementById('saveBtn').disabled = true;
+            document.getElementById('resultsList').innerHTML = '';
+            document.getElementById('logList').innerHTML = '';
+            activeConfigs = [];
+            
+            updateStatus('🔄 در حال دریافت و تست کانفیگ‌ها...');
+            addLog('🚀 شروع تست خودکار...', 'verified');
+            addLog(`📡 پروتکل‌های مجاز: ${Object.entries(settings.protocols).filter(p=>p[1]).map(p=>p[0]).join(', ')}`, 'info');
+            
+            // دریافت کانفیگ‌ها
+            let allConfigs = [];
+            for (const url of SUB_URLS) {
+                if (!isTesting) break;
+                addLog(`📥 دریافت از منبع: ${url.substring(0, 50)}...`, 'info');
+                try {
+                    const response = await fetch(url);
+                    if (response.ok) {
+                        let content = await response.text();
+                        try {
+                            let decoded = atob(content);
+                            if (decoded.includes('://')) content = decoded;
+                        } catch(e) {}
+                        let lines = content.split('\n').filter(l => l.trim() && (l.includes('vmess://') || l.includes('vless://') || l.includes('trojan://')));
+                        lines = lines.filter(line => {
+                            if (line.startsWith('vmess://')) return settings.protocols.vmess;
+                            if (line.startsWith('vless://')) return settings.protocols.vless;
+                            if (line.startsWith('trojan://')) return settings.protocols.trojan;
+                            return false;
+                        });
+                        allConfigs.push(...lines);
+                        addLog(`✅ ${lines.length} کانفیگ دریافت شد`, 'success');
+                    }
+                } catch(e) {
+                    addLog(`❌ خطا در دریافت: ${e.message}`, 'error');
+                }
+                if (allConfigs.length >= settings.maxConfigs) {
+                    allConfigs = allConfigs.slice(0, settings.maxConfigs);
+                    addLog(`⚠️ محدود کردن به ${settings.maxConfigs} کانفیگ`, 'warning');
+                    break;
+                }
+            }
+            
+            if (!allConfigs.length) {
+                addLog('❌ هیچ کانفیگی برای تست یافت نشد!', 'error');
+                isTesting = false;
+                document.getElementById('autoTestBtn').innerHTML = '▶ شروع تست واقعی';
+                document.getElementById('autoTestBtn').className = 'btn btn-primary';
+                return;
+            }
+            
+            addLog(`🔍 ${allConfigs.length} کانفیگ برای تست واقعی آماده شد`, 'info');
+            
+            const total = allConfigs.length;
+            for (let i = 0; i < total && isTesting; i++) {
+                const config = allConfigs[i];
+                let host = '', port = '', name = 'Unknown', type = 'unknown';
+                
+                try {
+                    if (config.startsWith('vmess://')) {
+                        let b64 = config.substring(8).split('#')[0];
+                        while (b64.length % 4) b64 += '=';
+                        let obj = JSON.parse(atob(b64));
+                        host = obj.add;
+                        port = obj.port;
+                        name = obj.ps || 'VMess';
+                        type = 'vmess';
+                    } else if (config.startsWith('vless://')) {
+                        let match = config.match(/@([^:]+):(\d+)/);
+                        if (match) {
+                            host = match[1];
+                            port = match[2];
+                            name = 'VLESS';
+                            type = 'vless';
+                        }
+                    } else if (config.startsWith('trojan://')) {
+                        let match = config.match(/@([^:]+):(\d+)/);
+                        if (match) {
+                            host = match[1];
+                            port = match[2];
+                            name = 'Trojan';
+                            type = 'trojan';
+                        }
+                    }
+                } catch(e) {}
+                
+                if (host && port) {
+                    addLog(`🔄 تست واقعی: ${host}:${port} (${type})...`, 'info');
+                    
+                    try {
+                        const response = await fetchWithTimeout(`${API_URL}/test-config`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ config: config, timeout: settings.maxLatency / 1000 })
+                        }, 15000);
+                        const result = await response.json();
+                        
+                        if (result.alive) {
+                            const latency = result.latency || 0;
+                            activeConfigs.push({ latency, config, host, port, name, type });
+                            addLog(`✅ تأیید شد: ${host}:${port} (${type}) | ${latency}ms`, 'verified');
+                        } else {
+                            addLog(`❌ رد شد: ${host}:${port} (${type}) | دلیل: ${result.message || 'نامشخص'}`, 'warning');
+                        }
+                    } catch(e) {
+                        addLog(`❌ خطا در تست ${host}:${port}: ${e.message}`, 'error');
+                    }
+                }
+                
+                const progress = ((i + 1) / total * 100);
+                document.getElementById('progressFill').style.width = `${progress}%`;
+                document.getElementById('progressLabel').innerHTML = `⏳ تست واقعی ${i+1} از ${total} کانفیگ...`;
+            }
+            
+            // مرتب‌سازی و نمایش
+            activeConfigs.sort((a, b) => a.latency - b.latency);
+            topConfigs = activeConfigs.slice(0, 5);
+            
+            const resultsList = document.getElementById('resultsList');
+            if (activeConfigs.length === 0) {
+                resultsList.innerHTML = '<div class="result-item" style="text-align:center;">❌ هیچ کانفیگ ۱۰۰٪ تضمینی پیدا نشد!</div>';
+            } else {
+                for (let i = 0; i < Math.min(activeConfigs.length, 50); i++) {
+                    const c = activeConfigs[i];
+                    const medal = i < 5 ? (i === 0 ? '🏆 ' : i === 1 ? '🥈 ' : i === 2 ? '🥉 ' : '📌 ') : '   ';
+                    const resultDiv = document.createElement('div');
+                    resultDiv.className = 'result-item verified';
+                    resultDiv.innerHTML = `${medal} ✅ ${c.host}:${c.port} (${c.type}) | ${c.latency}ms | ${c.name}`;
+                    resultsList.appendChild(resultDiv);
+                }
+            }
+            
+            document.getElementById('progressLabel').innerHTML = `✅ تست واقعی کامل شد! ${activeConfigs.length} کانفیگ ۱۰۰٪ تضمینی`;
+            updateStatus(`✅ تست واقعی کامل شد - ${activeConfigs.length} کانفیگ ۱۰۰٪ تضمینی پیدا شد`);
+            addLog(`✅ تست واقعی کامل شد. ${activeConfigs.length} کانفیگ تأیید شده.`, 'success');
+            
+            if (activeConfigs.length) {
+                document.getElementById('saveBtn').disabled = false;
                 refreshTopConfigs();
             }
+            
+            isTesting = false;
+            document.getElementById('autoTestBtn').innerHTML = '▶ شروع تست واقعی';
+            document.getElementById('autoTestBtn').className = 'btn btn-primary';
         }
-
-        // استخراج host و port از کانفیگ
+        
+        // ==================== بقیه توابع (تنظیمات، تست دستی، QR، و...) ====================
         function extractHostPort(config) {
             try {
                 if (config.startsWith('vmess://')) {
@@ -438,20 +722,10 @@
             return null;
         }
 
-        // چک کردن پروتکل مجاز (فقط برای تست خودکار)
-        function isProtocolAllowed(config) {
-            if (config.startsWith('vmess://')) return settings.protocols.vmess;
-            if (config.startsWith('vless://')) return settings.protocols.vless;
-            if (config.startsWith('trojan://')) return settings.protocols.trojan;
-            return false;
-        }
-
-        // تشخیص اینکه ورودی تست دستی لینک سابسکریپشن است یا کانفیگ تکی
         function isSubscriptionUrl(input) {
             return input.startsWith('http://') || input.startsWith('https://');
         }
 
-        // دریافت کانفیگ از لینک سابسکریپشن (برای تست دستی)
         async function fetchConfigsFromUrl(url) {
             try {
                 const response = await fetch(url);
@@ -461,190 +735,12 @@
                         let decoded = atob(content);
                         if (decoded.includes('://')) content = decoded;
                     } catch(e) {}
-                    const lines = content.split('\n').filter(l => l.trim() && (l.includes('vmess://') || l.includes('vless://') || l.includes('trojan://')));
-                    return lines;
+                    return content.split('\n').filter(l => l.trim() && (l.includes('vmess://') || l.includes('vless://') || l.includes('trojan://')));
                 }
-            } catch(e) {
-                return [];
-            }
+            } catch(e) {}
             return [];
         }
 
-        // بیدار کردن سرور واسط
-        async function wakeUpServer() {
-            try {
-                const response = await fetch(`${API_URL}/health`);
-                if (response.ok) {
-                    return true;
-                }
-            } catch(e) {
-                await new Promise(resolve => setTimeout(resolve, 5000));
-                return true;
-            }
-            return true;
-        }
-
-        // تست واقعی از طریق سرور واسط
-        async function realTestViaAPI(config, timeout = 10000) {
-            try {
-                const response = await fetch(`${API_URL}/test-config`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ config: config, timeout: timeout / 1000 })
-                });
-                const result = await response.json();
-                return result;
-            } catch(e) {
-                return { alive: false, message: `خطا در اتصال به API: ${e.message}` };
-            }
-        }
-
-        function addLog(message, type = 'info', isManual = false) {
-            const logList = isManual ? document.getElementById('manualResult') : document.getElementById('logList');
-            if (!logList) return;
-            const time = new Date().toLocaleTimeString();
-            const icons = { info: '💚', success: '✅', error: '❌', warning: '⚠️', verified: '🔐' };
-            const icon = icons[type] || 'ℹ️';
-            
-            if (isManual) {
-                const existingHtml = logList.innerHTML;
-                logList.innerHTML = existingHtml + `<div class="result-item">[${time}] ${icon} ${message}</div>`;
-            } else {
-                const logEntry = document.createElement('div');
-                logEntry.className = 'result-item';
-                logEntry.innerHTML = `[${time}] ${icon} ${message}`;
-                logList.appendChild(logEntry);
-                logList.scrollTop = logList.scrollHeight;
-            }
-        }
-
-        function updateStatus(message) {
-            document.getElementById('statusBar').innerHTML = message;
-        }
-
-        // ==================== تست خودکار ====================
-        async function fetchConfigsForAuto() {
-            let allConfigs = [];
-            for (const url of SUB_URLS) {
-                addLog(`📥 دریافت از منبع: ${url.substring(0, 50)}...`, 'info');
-                try {
-                    const response = await fetch(url);
-                    if (response.ok) {
-                        let content = await response.text();
-                        try {
-                            let decoded = atob(content);
-                            if (decoded.includes('://')) content = decoded;
-                        } catch(e) {}
-                        let lines = content.split('\n').filter(l => l.trim() && (l.includes('vmess://') || l.includes('vless://') || l.includes('trojan://')));
-                        lines = lines.filter(line => isProtocolAllowed(line));
-                        allConfigs.push(...lines);
-                        addLog(`✅ ${lines.length} کانفیگ دریافت شد`, 'success');
-                    }
-                } catch(e) {
-                    addLog(`❌ خطا در دریافت: ${e.message}`, 'error');
-                }
-                if (allConfigs.length >= settings.maxConfigs) {
-                    allConfigs = allConfigs.slice(0, settings.maxConfigs);
-                    addLog(`⚠️ محدود کردن به ${settings.maxConfigs} کانفیگ`, 'warning');
-                    break;
-                }
-            }
-            return allConfigs;
-        }
-
-        async function startAutoTest() {
-            if (isTesting) {
-                isTesting = false;
-                document.getElementById('autoTestBtn').innerHTML = '▶ شروع تست واقعی';
-                document.getElementById('autoTestBtn').className = 'btn btn-primary';
-                updateStatus('⏸ تست متوقف شد');
-                return;
-            }
-
-            isTesting = true;
-            document.getElementById('autoTestBtn').innerHTML = '⏸ توقف تست';
-            document.getElementById('autoTestBtn').className = 'btn btn-danger';
-            document.getElementById('saveBtn').disabled = true;
-            document.getElementById('resultsList').innerHTML = '';
-            document.getElementById('logList').innerHTML = '';
-            activeConfigs = [];
-            
-            updateStatus('🔄 در حال بیدار کردن سرور واسط...');
-            addLog('🔐 شروع تست خودکار با تنظیمات اعمال شده', 'verified');
-            addLog(`📡 پروتکل‌های مجاز: ${Object.entries(settings.protocols).filter(p=>p[1]).map(p=>p[0]).join(', ')}`, 'info');
-            addLog(`🔢 حداکثر کانفیگ: ${settings.maxConfigs}`, 'info');
-            
-            await wakeUpServer();
-            
-            const configs = await fetchConfigsForAuto();
-            
-            if (!configs.length) {
-                addLog('❌ هیچ کانفیگی برای تست یافت نشد!', 'error');
-                isTesting = false;
-                document.getElementById('autoTestBtn').innerHTML = '▶ شروع تست واقعی';
-                document.getElementById('autoTestBtn').className = 'btn btn-primary';
-                return;
-            }
-
-            addLog(`🔍 ${configs.length} کانفیگ برای تست واقعی آماده شد`, 'info');
-
-            const total = configs.length;
-            for (let i = 0; i < total && isTesting; i++) {
-                const config = configs[i];
-                const extracted = extractHostPort(config);
-                
-                if (extracted) {
-                    const { host, port, name, type } = extracted;
-                    addLog(`🔄 تست واقعی: ${host}:${port} (${type})...`, 'info');
-                    
-                    const result = await realTestViaAPI(config, settings.maxLatency);
-                    
-                    if (result.alive) {
-                        const latency = result.latency || 0;
-                        activeConfigs.push({ latency, config, host, port, name, type, verified: true, message: result.message });
-                        addLog(`✅ تأیید شد: ${host}:${port} (${type}) | ${latency}ms`, 'verified');
-                    } else {
-                        addLog(`❌ رد شد: ${host}:${port} (${type}) | دلیل: ${result.message}`, 'warning');
-                    }
-                }
-                
-                const progress = ((i + 1) / total * 100);
-                document.getElementById('progressFill').style.width = `${progress}%`;
-                document.getElementById('progressLabel').innerHTML = `⏳ تست واقعی ${i+1} از ${total} کانفیگ...`;
-            }
-
-            activeConfigs.sort((a, b) => a.latency - b.latency);
-            topConfigs = activeConfigs.slice(0, 5);
-            
-            const resultsList = document.getElementById('resultsList');
-            if (activeConfigs.length === 0) {
-                resultsList.innerHTML = '<div class="result-item" style="text-align:center;">❌ هیچ کانفیگ ۱۰۰٪ تضمینی پیدا نشد!</div>';
-            } else {
-                for (let i = 0; i < Math.min(activeConfigs.length, 50); i++) {
-                    const c = activeConfigs[i];
-                    const medal = i < 5 ? (i === 0 ? '🏆 ' : i === 1 ? '🥈 ' : i === 2 ? '🥉 ' : '📌 ') : '   ';
-                    const resultDiv = document.createElement('div');
-                    resultDiv.className = 'result-item verified';
-                    resultDiv.innerHTML = `${medal} ✅ ${c.host}:${c.port} (${c.type}) | ${c.latency}ms | ${c.name}`;
-                    resultsList.appendChild(resultDiv);
-                }
-            }
-
-            document.getElementById('progressLabel').innerHTML = `✅ تست واقعی کامل شد! ${activeConfigs.length} کانفیگ ۱۰۰٪ تضمینی`;
-            updateStatus(`✅ تست واقعی کامل شد - ${activeConfigs.length} کانفیگ ۱۰۰٪ تضمینی پیدا شد`);
-            addLog(`✅ تست واقعی کامل شد. ${activeConfigs.length} کانفیگ تأیید شده.`, 'success');
-
-            if (activeConfigs.length) {
-                document.getElementById('saveBtn').disabled = false;
-                refreshTopConfigs();
-            }
-
-            isTesting = false;
-            document.getElementById('autoTestBtn').innerHTML = '▶ شروع تست واقعی';
-            document.getElementById('autoTestBtn').className = 'btn btn-primary';
-        }
-
-        // ==================== تست دستی (مستقل از تنظیمات) ====================
         async function startManualTest() {
             const inputText = document.getElementById('manualConfig').value.trim();
             if (!inputText) {
@@ -657,29 +753,21 @@
             updateStatus('🔄 در حال تست دستی...');
 
             let configsToTest = [];
-
-            // تشخیص اینکه ورودی لینک سابسکریپشن است یا کانفیگ تکی
             if (isSubscriptionUrl(inputText)) {
-                addLog(`📥 دریافت کانفیگ از لینک سابسکریپشن: ${inputText.substring(0, 60)}...`, 'info', true);
                 configsToTest = await fetchConfigsFromUrl(inputText);
                 if (configsToTest.length === 0) {
-                    resultDiv.innerHTML = '<div class="result-item dead">❌ هیچ کانفیگی از لینک سابسکریپشن دریافت نشد!</div>';
-                    updateStatus('❌ خطا در دریافت سابسکریپشن');
+                    resultDiv.innerHTML = '<div class="result-item dead">❌ هیچ کانفیگی دریافت نشد!</div>';
                     return;
                 }
-                addLog(`✅ ${configsToTest.length} کانفیگ از سابسکریپشن دریافت شد`, 'success', true);
             } else {
-                // ورودی به صورت خط به خط جدا می‌شود (پشتیبانی از چند کانفیگ)
-                configsToTest = inputText.split('\n').filter(l => l.trim() && (l.includes('://')));
+                configsToTest = inputText.split('\n').filter(l => l.trim() && l.includes('://'));
                 if (configsToTest.length === 0) {
                     resultDiv.innerHTML = '<div class="result-item dead">❌ هیچ کانفیگ معتبری یافت نشد!</div>';
-                    updateStatus('❌ فرمت ورودی نامعتبر');
                     return;
                 }
             }
 
             resultDiv.innerHTML = '';
-            let results = [];
             let liveCount = 0;
 
             for (let i = 0; i < configsToTest.length; i++) {
@@ -691,16 +779,25 @@
                     resultDiv.innerHTML += `<div class="result-item">🔄 تست ${i+1}/${configsToTest.length}: ${host}:${port} (${type})...</div>`;
                     resultDiv.scrollTop = resultDiv.scrollHeight;
                     
-                    const result = await realTestViaAPI(config, 10000);
-                    
-                    if (result.alive) {
-                        liveCount++;
-                        results.push({ alive: true, latency: result.latency, host, port, name, type, config });
+                    try {
+                        const response = await fetchWithTimeout(`${API_URL}/test-config`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ config: config, timeout: 10 })
+                        }, 15000);
+                        const result = await response.json();
+                        
+                        if (result.alive) {
+                            liveCount++;
+                            resultDiv.innerHTML = resultDiv.innerHTML.replace(`🔄 تست ${i+1}/${configsToTest.length}: ${host}:${port} (${type})...`, 
+                                `✅ تأیید شد: ${host}:${port} (${type}) | ${result.latency}ms | ${name}`);
+                        } else {
+                            resultDiv.innerHTML = resultDiv.innerHTML.replace(`🔄 تست ${i+1}/${configsToTest.length}: ${host}:${port} (${type})...`, 
+                                `❌ رد شد: ${host}:${port} (${type}) | دلیل: ${result.message || 'نامشخص'}`);
+                        }
+                    } catch(e) {
                         resultDiv.innerHTML = resultDiv.innerHTML.replace(`🔄 تست ${i+1}/${configsToTest.length}: ${host}:${port} (${type})...`, 
-                            `✅ تأیید شد: ${host}:${port} (${type}) | ${result.latency}ms | ${name}`);
-                    } else {
-                        resultDiv.innerHTML = resultDiv.innerHTML.replace(`🔄 تست ${i+1}/${configsToTest.length}: ${host}:${port} (${type})...`, 
-                            `❌ رد شد: ${host}:${port} (${type}) | دلیل: ${result.message}`);
+                            `❌ خطا: ${host}:${port} | ${e.message}`);
                     }
                 } else {
                     resultDiv.innerHTML += `<div class="result-item dead">❌ فرمت نامعتبر: ${config.substring(0, 80)}...</div>`;
@@ -718,20 +815,11 @@
                 if (!container) return false;
                 container.innerHTML = '';
                 let qrText = text;
-                if (qrText.length > 2000) {
-                    qrText = qrText.substring(0, 1900) + '...';
-                }
-                new QRCode(container, {
-                    text: qrText,
-                    width: 120,
-                    height: 120,
-                    colorDark: "#000000",
-                    colorLight: "#ffffff",
-                    correctLevel: QRCode.CorrectLevel.M
-                });
+                if (qrText.length > 2000) qrText = qrText.substring(0, 1900) + '...';
+                new QRCode(container, { text: qrText, width: 120, height: 120 });
                 return true;
             } catch(e) {
-                document.getElementById(elementId).innerHTML = '<div style="font-size:11px;color:red;">❌ QR failed</div>';
+                container.innerHTML = '<div style="font-size:11px;color:red;">❌ QR failed</div>';
                 return false;
             }
         }
@@ -739,535 +827,123 @@
         function refreshTopConfigs() {
             const grid = document.getElementById('topGrid');
             grid.innerHTML = '';
-            
             if (!topConfigs.length) {
-                grid.innerHTML = '<div style="text-align:center; padding:40px;">⚠️ هنوز کانفیگ ۱۰۰٪ تضمینی وجود ندارد! لطفاً ابتدا تست واقعی را انجام دهید.</div>';
+                grid.innerHTML = '<div style="text-align:center; padding:40px;">⚠️ هنوز کانفیگ ۱۰۰٪ تضمینی وجود ندارد!</div>';
                 return;
             }
-
             for (let i = 0; i < topConfigs.length; i++) {
                 const c = topConfigs[i];
                 const rank = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`;
                 const rankColor = i === 0 ? '#f9e2af' : '#89b4fa';
-                
-                const qrId = `qr-${i}-${Date.now()}-${Math.random()}`;
+                const qrId = `qr-${i}-${Date.now()}`;
                 const card = document.createElement('div');
                 card.className = 'qr-card';
                 card.innerHTML = `
                     <h3 style="color: ${rankColor};">${rank} ${c.name} (${c.type})</h3>
                     <p>📍 ${c.host}:${c.port}</p>
-                    <p>⚡ تاخیر واقعی: ${c.latency}ms</p>
-                    <p style="color:#a6e3a1;">✓ تأیید شده با تست واقعی</p>
+                    <p>⚡ تاخیر: ${c.latency}ms</p>
                     <div class="qr-code" id="${qrId}"></div>
-                    <div style="margin-top: 10px;">
-                        <button class="btn btn-primary" onclick="copyConfig('${c.config.replace(/'/g, "\\'")}')">📋 کپی کانفیگ</button>
-                    </div>
-                    <p style="font-size: 0.7em; margin-top: 10px; word-break: break-all;">${c.config.substring(0, 60)}...</p>
+                    <button class="btn btn-primary" onclick="copyConfig('${c.config.replace(/'/g, "\\'")}')">📋 کپی</button>
+                    <p style="font-size:0.7em; margin-top:10px;">${c.config.substring(0, 50)}...</p>
                 `;
                 grid.appendChild(card);
-                
-                setTimeout(() => {
-                    createQRCode(qrId, c.config);
-                }, 100);
+                setTimeout(() => createQRCode(qrId, c.config), 100);
             }
         }
 
         function copyConfig(config) {
             navigator.clipboard.writeText(config).then(() => {
-                updateStatus('✅ کانفیگ در کلیپ‌بورد کپی شد!');
-                alert('✅ کانفیگ ۱۰۰٪ تضمینی کپی شد!');
-            }).catch(() => {
-                alert('خطا در کپی');
-            });
+                updateStatus('✅ کانفیگ کپی شد!');
+                alert('✅ کانفیگ کپی شد!');
+            }).catch(() => alert('خطا در کپی'));
         }
 
         function saveConfigs() {
-            if (!activeConfigs.length) {
-                alert('هیچ کانفیگ ۱۰۰٪ تضمینی وجود ندارد!');
-                return;
-            }
-            
-            let text = '# V2Ray Configs - کانفیگ‌های ۱۰۰٪ تضمینی (Real Test)\n';
-            text += `# تاریخ: ${new Date().toLocaleString()}\n`;
-            text += `# تعداد: ${activeConfigs.length}\n\n`;
-            
+            if (!activeConfigs.length) { alert('هیچ کانفیگی وجود ندارد!'); return; }
+            let text = '# V2Ray Configs - کانفیگ‌های تضمینی\n';
+            text += `# تاریخ: ${new Date().toLocaleString()}\n# تعداد: ${activeConfigs.length}\n\n`;
             activeConfigs.forEach((c, i) => {
-                text += `# ${i+1}. ${c.host}:${c.port} (${c.type}) - ${c.latency}ms\n`;
-                text += `${c.config}\n\n`;
+                text += `# ${i+1}. ${c.host}:${c.port} (${c.type}) - ${c.latency}ms\n${c.config}\n\n`;
             });
-            
             const blob = new Blob([text], { type: 'text/plain' });
-            const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
-            a.href = url;
+            a.href = URL.createObjectURL(blob);
             a.download = `v2ray_verified_${new Date().toISOString().slice(0,19)}.txt`;
             a.click();
-            URL.revokeObjectURL(url);
-            updateStatus('💾 کانفیگ‌های تضمینی ذخیره شدند');
+            URL.revokeObjectURL(a.href);
+            updateStatus('💾 کانفیگ‌ها ذخیره شدند');
         }
 
         function clearManual() {
             document.getElementById('manualConfig').value = '';
             document.getElementById('manualResult').innerHTML = '';
-            updateStatus('🗑 ورودی تست دستی پاک شد');
         }
 
-        // بارگذاری تنظیمات هنگام شروع
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            if (tab === 'auto') {
+                document.getElementById('autoTab').classList.add('active');
+                document.querySelector('.tab-btn').classList.add('active');
+            } else if (tab === 'manual') {
+                document.getElementById('manualTab').classList.add('active');
+                document.querySelectorAll('.tab-btn')[1].classList.add('active');
+            } else {
+                document.getElementById('topTab').classList.add('active');
+                document.querySelectorAll('.tab-btn')[2].classList.add('active');
+                refreshTopConfigs();
+            }
+        }
+
+        function loadSettings() {
+            const saved = localStorage.getItem('v2ray_real_settings');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    settings = { ...settings, ...parsed };
+                    if (parsed.apiUrl) API_URL = parsed.apiUrl;
+                } catch(e) {}
+            }
+            document.getElementById('protoVmess').checked = settings.protocols.vmess;
+            document.getElementById('ProtoVless').checked = settings.protocols.vless;
+            document.getElementById('protoTrojan').checked = settings.protocols.trojan;
+            document.getElementById('apiUrl').value = API_URL;
+            document.getElementById('maxConfigs').value = settings.maxConfigs;
+            document.getElementById('maxLatency').value = settings.maxLatency;
+        }
+
+        function saveSettings() {
+            settings.protocols = {
+                vmess: document.getElementById('protoVmess').checked,
+                vless: document.getElementById('ProtoVless').checked,
+                trojan: document.getElementById('protoTrojan').checked
+            };
+            settings.maxConfigs = parseInt(document.getElementById('maxConfigs').value);
+            settings.maxLatency = parseInt(document.getElementById('maxLatency').value);
+            API_URL = document.getElementById('apiUrl').value;
+            settings.apiUrl = API_URL;
+            localStorage.setItem('v2ray_real_settings', JSON.stringify(settings));
+            closeSettings();
+            updateStatus('✅ تنظیمات ذخیره شد!');
+        }
+
+        function openSettings() {
+            document.getElementById('settingsModal').classList.add('active');
+        }
+        function closeSettings() {
+            document.getElementById('settingsModal').classList.remove('active');
+        }
+
+        // اتصال دکمه تست به تابع جدید
+        document.getElementById('autoTestBtn').onclick = startAutoTestWithWake;
+        
+        // بارگذاری تنظیمات
         loadSettings();
-        // ==================== وضعیت سرور و بیدارساز خودکار ====================
-let serverStatus = { isAwake: false, checking: false, lastCheck: 0 };
-let wakeUpAttempts = 0;
-
-// بررسی وضعیت سرور
-async function checkServerStatus() {
-    if (serverStatus.checking) return;
-    serverStatus.checking = true;
-    
-    const statusIndicator = document.getElementById('serverStatus');
-    if (statusIndicator) {
-        statusIndicator.innerHTML = '<span class="spinner-small"></span> در حال بررسی سرور...';
-    }
-    
-    try {
-        const startTime = Date.now();
-        const response = await fetch(`${API_URL}/health`, {
-            method: 'GET',
-            signal: AbortSignal.timeout(5000)
-        });
-        const latency = Date.now() - startTime;
         
-        if (response.ok) {
-            serverStatus.isAwake = true;
-            serverStatus.lastCheck = Date.now();
-            if (statusIndicator) {
-                statusIndicator.innerHTML = '🟢 سرور واسط فعال است';
-                statusIndicator.className = 'server-status online';
-            }
-            updateStatus('🟢 سرور رابط فعال - آماده برای تست');
-            return true;
-        } else {
-            throw new Error('پاسخ نامعتبر');
-        }
-    } catch(e) {
-        serverStatus.isAwake = false;
-        if (statusIndicator) {
-            statusIndicator.innerHTML = '🟡 سرور واسط در حال بیدار شدن...';
-            statusIndicator.className = 'server-status waking';
-        }
-        updateStatus('⚠️ سرور رابط در حال بیدار شدن - لطفاً چند ثانیه صبر کنید...');
-        
-        // تلاش برای بیدار کردن سرور
-        const woken = await wakeUpServer();
-        if (woken) {
-            serverStatus.isAwake = true;
-            if (statusIndicator) {
-                statusIndicator.innerHTML = '🟢 سرور واسط فعال شد';
-                statusIndicator.className = 'server-status online';
-            }
-            updateStatus('✅ سرور رابط بیدار شد - آماده برای تست');
-        }
-        return false;
-    } finally {
-        serverStatus.checking = false;
-    }
-}
-
-// بیدار کردن سرور با تلاش مجدد (مقاوم‌تر)
-async function wakeUpServerAdvanced(maxAttempts = 3) {
-    updateStatus('⏳ در حال بیدار کردن سرور رابط...');
-    
-    for (let i = 0; i < maxAttempts; i++) {
-        try {
-            addLog(`🔄 تلاش ${i+1} برای بیدار کردن سرور...`, 'info');
-            
-            // درخواست با timeout طولانی‌تر
-            const response = await fetch(`${API_URL}/health`, {
-                method: 'GET',
-                signal: AbortSignal.timeout(15000) // 15 ثانیه timeout
-            });
-            
-            if (response.ok) {
-                addLog(`✅ سرور رابط با موفقیت بیدار شد (تلاش ${i+1})`, 'success');
-                updateStatus('✅ سرور رابط فعال است');
-                return true;
-            }
-        } catch(e) {
-            addLog(`⚠️ تلاش ${i+1} ناموفق: ${e.message}`, 'warning');
-            if (i < maxAttempts - 1) {
-                await new Promise(r => setTimeout(r, 3000)); // صبر 3 ثانیه بین تلاش‌ها
-            }
-        }
-    }
-    
-    addLog(`❌ پس از ${maxAttempts} تلاش، سرور پاسخ نداد`, 'error');
-    updateStatus('❌ سرور رابط در دسترس نیست - لطفاً بعداً تلاش کنید');
-    return false;
-}
-
-// قبل از شروع تست خودکار، حتماً سرور را بیدار کن
-async function startAutoTestWithWake() {
-    // نمایش وضعیت سرور
-    showServerStatusModal();
-    
-    // بررسی و بیدار کردن سرور
-    updateStatus('🔍 بررسی وضعیت سرور رابط...');
-    addLog('🔐 بررسی وضعیت سرور واسط...', 'verified');
-    
-    const isReady = await wakeUpServerAdvanced(4);
-    
-    if (!isReady) {
-        alert('❌ سرور رابط در دسترس نیست!\nلطفاً چند دقیقه دیگر تلاش کنید یا آدرس سرور را در تنظیمات تغییر دهید.');
-        return;
-    }
-    
-    // پس از بیدار شدن، تست را شروع کن
-    startAutoTest();
-}
-
-// نمایش مودال وضعیت سرور
-function showServerStatusModal() {
-    let modal = document.getElementById('serverStatusModal');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'serverStatusModal';
-        modal.className = 'modal';
-        modal.innerHTML = `
-            <div class="modal-content" style="max-width: 400px; text-align: center;">
-                <div class="modal-header">
-                    <h2>🌐 وضعیت سرور رابط</h2>
-                    <button class="close-modal" onclick="closeServerStatusModal()">✕</button>
-                </div>
-                <div id="serverStatusDetails" style="padding: 20px;">
-                    <div class="spinner"></div>
-                    <p style="margin-top: 15px;">در حال بررسی وضعیت سرور...</p>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-    }
-    modal.classList.add('active');
-    
-    // به‌روزرسانی وضعیت مودال
-    const updateModal = setInterval(async () => {
-        const statusDiv = document.getElementById('serverStatusDetails');
-        if (!statusDiv) return;
-        
-        try {
-            const startTime = Date.now();
-            const response = await fetch(`${API_URL}/health`, { signal: AbortSignal.timeout(5000) });
-            const latency = Date.now() - startTime;
-            
-            if (response.ok) {
-                statusDiv.innerHTML = `
-                    <div style="font-size: 48px;">🟢</div>
-                    <h3 style="color: #a6e3a1;">سرور فعال است</h3>
-                    <p>⏱️ زمان پاسخ: ${latency}ms</p>
-                    <p>✅ آماده برای تست واقعی</p>
-                `;
-                setTimeout(() => closeServerStatusModal(), 2000);
-                clearInterval(updateModal);
-            } else {
-                statusDiv.innerHTML = `
-                    <div style="font-size: 48px;">🟡</div>
-                    <h3 style="color: #fab387;">سرور در حال بیدار شدن...</h3>
-                    <p>لطفاً چند ثانیه صبر کنید</p>
-                    <div class="spinner"></div>
-                `;
-            }
-        } catch(e) {
-            statusDiv.innerHTML = `
-                <div style="font-size: 48px;">🔴</div>
-                <h3 style="color: #f38ba8;">سرور در دسترس نیست</h3>
-                <p>سرور ممکن است در حال بیدار شدن باشد</p>
-                <button class="btn btn-primary" onclick="location.reload()" style="margin-top: 15px;">🔄 تلاش مجدد</button>
-            `;
-        }
-    }, 2000);
-}
-
-function closeServerStatusModal() {
-    const modal = document.getElementById('serverStatusModal');
-    if (modal) modal.classList.remove('active');
-}
-
-// همچنین دکمه تست خودکار را به نسخه جدید متصل کنید
-// این بخش را در تابعی که قبلاً دارید جایگزین کنید
-// document.getElementById('autoTestBtn').onclick = startAutoTestWithWake;
-
-// نمایش وضعیت سرور در هدر سایت
-function addServerStatusToHeader() {
-    const header = document.querySelector('.header');
-    if (header && !document.getElementById('serverStatus')) {
-        const statusDiv = document.createElement('div');
-        statusDiv.id = 'serverStatus';
-        statusDiv.className = 'server-status';
-        statusDiv.style.cssText = `
-            display: inline-block;
-            margin-top: 10px;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.75em;
-            font-weight: bold;
-            background: #313244;
-        `;
-        header.appendChild(statusDiv);
-    }
-}
-
-// اضافه کردن استایل برای اسپینر کوچک
-const style = document.createElement('style');
-style.textContent = `
-    .spinner-small {
-        display: inline-block;
-        width: 14px;
-        height: 14px;
-        border: 2px solid #45475a;
-        border-top-color: #89b4fa;
-        border-radius: 50%;
-        animation: spin 0.6s linear infinite;
-        vertical-align: middle;
-        margin-left: 5px;
-    }
-    .server-status.online { background: #a6e3a120; color: #a6e3a1; border-right: 3px solid #a6e3a1; }
-    .server-status.waking { background: #fab38720; color: #fab387; border-right: 3px solid #fab387; }
-    @keyframes spin {
-        to { transform: rotate(360deg); }
-    }
-`;
-document.head.appendChild(style);
-
-// جایگزینی دکمه تست خودکار
-// این کار را بعد از لود صفحه انجام بده
-window.addEventListener('DOMContentLoaded', () => {
-    addServerStatusToHeader();
-    const autoBtn = document.getElementById('autoTestBtn');
-    if (autoBtn && autoBtn.getAttribute('data-upgraded') !== 'true') {
-        const originalClick = autoBtn.onclick;
-        autoBtn.onclick = async (e) => {
-            e.preventDefault();
-            await startAutoTestWithWake();
-        };
-        autoBtn.setAttribute('data-upgraded', 'true');
-    }
-    
-    // بررسی خودکار وضعیت سرور هر 30 ثانیه
-    checkServerStatus();
-    setInterval(checkServerStatus, 30000);
-});
-        // بررسی وضعیت سرور (سازگار با همه مرورگرها)
-async function checkServerStatus() {
-    if (serverStatus.checking) return;
-    serverStatus.checking = true;
-    
-    const statusIndicator = document.getElementById('serverStatus');
-    if (statusIndicator && !serverStatus.isAwake) {
-        statusIndicator.innerHTML = '<span class="spinner-small"></span> در حال بررسی سرور...';
-    }
-    
-    try {
-        // استفاده از Promise.race به جای AbortSignal.timeout برای سازگاری با فایرفاکس
-        const fetchPromise = fetch(`${API_URL}/health`, { method: 'GET' });
-        const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Timeout')), 5000)
-        );
-        
-        const startTime = Date.now();
-        const response = await Promise.race([fetchPromise, timeoutPromise]);
-        const latency = Date.now() - startTime;
-        
-        if (response && response.ok) {
-            serverStatus.isAwake = true;
-            serverStatus.lastCheck = Date.now();
-            if (statusIndicator) {
-                statusIndicator.innerHTML = '🟢 سرور واسط فعال است';
-                statusIndicator.className = 'server-status online';
-            }
-            updateStatus('🟢 سرور رابط فعال - آماده برای تست');
-            return true;
-        } else {
-            throw new Error('پاسخ نامعتبر');
-        }
-    } catch(e) {
-        serverStatus.isAwake = false;
-        if (statusIndicator && !serverStatus.wakingModalShown) {
-            statusIndicator.innerHTML = '🟡 سرور واسط در حال بیدار شدن...';
-            statusIndicator.className = 'server-status waking';
-        }
-        updateStatus('⚠️ سرور رابط در حال بیدار شدن - لطفاً چند ثانیه صبر کنید...');
-        return false;
-    } finally {
-        serverStatus.checking = false;
-    }
-}
-        // بیدار کردن سرور با تلاش مجدد (مقاوم‌تر و سازگار با فایرفاکس)
-async function wakeUpServerAdvanced(maxAttempts = 3) {
-    updateStatus('⏳ در حال بیدار کردن سرور رابط...');
-    
-    for (let i = 0; i < maxAttempts; i++) {
-        try {
-            addLog(`🔄 تلاش ${i+1} برای بیدار کردن سرور...`, 'info');
-            
-            // استفاده از Promise.race به جای AbortSignal برای سازگاری با فایرفاکس
-            const fetchPromise = fetch(`${API_URL}/health`, { method: 'GET' });
-            const timeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Timeout')), 15000)
-            );
-            
-            const response = await Promise.race([fetchPromise, timeoutPromise]);
-            
-            if (response && response.ok) {
-                serverStatus.isAwake = true;
-                addLog(`✅ سرور رابط با موفقیت بیدار شد (تلاش ${i+1})`, 'success');
-                updateStatus('✅ سرور رابط فعال است');
-                return true;
-            }
-        } catch(e) {
-            addLog(`⚠️ تلاش ${i+1} ناموفق: ${e.message}`, 'warning');
-            if (i < maxAttempts - 1) {
-                await new Promise(r => setTimeout(r, 3000));
-            }
-        }
-    }
-    
-    addLog(`❌ پس از ${maxAttempts} تلاش، سرور پاسخ نداد`, 'error');
-    updateStatus('❌ سرور رابط در دسترس نیست - لطفاً بعداً تلاش کنید');
-    return false;
-}
-        // قبل از شروع تست خودکار، حتماً سرور را بیدار کن (فقط یک بار)
-let serverWakeAttempted = false;
-
-async function startAutoTestWithWake() {
-    // اگر سرور قبلاً بیدار شده بود، مستقیماً تست را شروع کن
-    if (serverStatus.isAwake) {
-        startAutoTest();
-        return;
-    }
-    
-    // اگر قبلاً تلاش برای بیدار کردن انجام شده و سرور بیدار نشده، دوباره تلاش نکن
-    if (serverWakeAttempted && !serverStatus.isAwake) {
-        addLog('⚠️ سرور قبلاً بررسی شده و در دسترس نیست. لطفاً بعداً تلاش کنید.', 'warning');
-        return;
-    }
-    
-    serverWakeAttempted = true;
-    
-    // فقط در صورتی مودال را نشان بده که سرور بیدار نباشد و قبلاً نشان داده نشده باشد
-    if (!serverStatus.isAwake && !serverStatus.modalShown) {
-        serverStatus.modalShown = true;
-        showServerStatusModal();
-    }
-    
-    updateStatus('🔍 بررسی وضعیت سرور رابط...');
-    addLog('🔐 بررسی وضعیت سرور واسط...', 'verified');
-    
-    const isReady = await wakeUpServerAdvanced(4);
-    
-    // بستن مودال بعد از اتمام تلاش‌ها
-    closeServerStatusModal();
-    
-    if (!isReady) {
-        serverWakeAttempted = false;
-        serverStatus.modalShown = false;
-        alert('❌ سرور رابط در دسترس نیست!\nلطفاً چند دقیقه دیگر تلاش کنید یا آدرس سرور را در تنظیمات تغییر دهید.');
-        return;
-    }
-    
-    // پس از بیدار شدن، تست را شروع کن
-    startAutoTest();
-}
-        function showServerStatusModal() {
-    // اگر مودال قبلاً بسته شده و سرور بیدار شده، دوباره نمایش نده
-    if (serverStatus.isAwake) return;
-    
-    let modal = document.getElementById('serverStatusModal');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'serverStatusModal';
-        modal.className = 'modal';
-        modal.innerHTML = `
-            <div class="modal-content" style="max-width: 400px; text-align: center;">
-                <div class="modal-header">
-                    <h2>🌐 وضعیت سرور رابط</h2>
-                    <button class="close-modal" onclick="closeServerStatusModal()">✕</button>
-                </div>
-                <div id="serverStatusDetails" style="padding: 20px;">
-                    <div class="spinner"></div>
-                    <p style="margin-top: 15px;">در حال بررسی وضعیت سرور...</p>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-    }
-    modal.classList.add('active');
-    
-    let modalUpdateInterval = null;
-    
-    const updateModalContent = async () => {
-        const statusDiv = document.getElementById('serverStatusDetails');
-        if (!statusDiv || !modal.classList.contains('active')) {
-            if (modalUpdateInterval) clearInterval(modalUpdateInterval);
-            return;
-        }
-        
-        try {
-            const fetchPromise = fetch(`${API_URL}/health`, { method: 'GET' });
-            const timeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Timeout')), 5000)
-            );
-            
-            const startTime = Date.now();
-            const response = await Promise.race([fetchPromise, timeoutPromise]);
-            const latency = Date.now() - startTime;
-            
-            if (response && response.ok) {
-                statusDiv.innerHTML = `
-                    <div style="font-size: 48px;">🟢</div>
-                    <h3 style="color: #a6e3a1;">سرور فعال است</h3>
-                    <p>⏱️ زمان پاسخ: ${latency}ms</p>
-                    <p>✅ آماده برای تست واقعی</p>
-                `;
-                serverStatus.isAwake = true;
-                setTimeout(() => closeServerStatusModal(), 1500);
-                if (modalUpdateInterval) clearInterval(modalUpdateInterval);
-            } else {
-                statusDiv.innerHTML = `
-                    <div style="font-size: 48px;">🟡</div>
-                    <h3 style="color: #fab387;">سرور در حال بیدار شدن...</h3>
-                    <p>لطفاً چند ثانیه صبر کنید</p>
-                    <div class="spinner"></div>
-                `;
-            }
-        } catch(e) {
-            statusDiv.innerHTML = `
-                <div style="font-size: 48px;">🟡</div>
-                <h3 style="color: #fab387;">در حال بیدار کردن سرور...</h3>
-                <p>تلاش مجدد خودکار در حال انجام است</p>
-                <div class="spinner"></div>
-            `;
-        }
-    };
-    
-    updateModalContent();
-    modalUpdateInterval = setInterval(updateModalContent, 3000);
-    
-    // ذخیره interval برای پاک کردن بعداً
-    window._modalUpdateInterval = modalUpdateInterval;
-}
-        function closeServerStatusModal() {
-    const modal = document.getElementById('serverStatusModal');
-    if (modal) {
-        modal.classList.remove('active');
-    }
-    if (window._modalUpdateInterval) {
-        clearInterval(window._modalUpdateInterval);
-        window._modalUpdateInterval = null;
-    }
-}
-        // در انتهای کد، قبل از window.addEventListener
-// ریست کردن وضعیت سرور هنگام بارگذاری صفحه
-serverStatus.isAwake = false;
-serverStatus.modalShown = false;
-serverWakeAttempted = false;
+        // بیدار کردن سرور در پس‌زمینه هنگام بارگذاری صفحه (بدون نمایش مودال)
+        setTimeout(() => {
+            checkAndWakeServer(false);
+        }, 1000);
     </script>
 </body>
 </html>
