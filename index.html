@@ -366,7 +366,7 @@
         <div id="autoTab" class="tab-content active">
             <div class="card">
                 <h3>📡 تست خودکار با Real Test</h3>
-                <p style="margin: 10px 0; color: #a6e3a1;">✅ تست همزمان ۵ کانفیگ - سرعت بالا + انیمیشن جشن</p>
+              
                 <button class="btn btn-primary" id="autoTestBtn">▶ شروع تست واقعی</button>
                 <button class="btn btn-success" onclick="saveConfigs()" id="saveBtn" disabled>💾 ذخیره کانفیگ‌ها</button>
                 
@@ -480,12 +480,21 @@
             "https://raw.githubusercontent.com/barry-far/V2ray-config/main/Sub8.txt"
         ];
 
+        // تشخیص مرورگر فایرفاکس و نمایش هشدار
         const isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+        
         if (isFirefox) {
-            document.getElementById('firefoxWarning').style.display = 'block';
-            document.getElementById('serverStatus').innerHTML = '⚠️ فایرفاکس - کروم/اج بهتر است';
+            const warningDiv = document.getElementById('firefoxWarning');
+            if (warningDiv) {
+                warningDiv.style.display = 'block';
+            }
+            // تغییر وضعیت سرور در هدر
+            const statusDiv = document.getElementById('serverStatus');
+            if (statusDiv) {
+                statusDiv.innerHTML = '⚠️ فایرفاکس - ممکن است با مشکل مواجه شود';
+                statusDiv.className = 'server-status waking';
+            }
         }
-
         // ============ انیمیشن کانفتی ============
         function launchConfetti() {
             const colors = ['#89b4fa', '#a6e3a1', '#f9e2af', '#f38ba8', '#fab387', '#cba6f7', '#94e2d5'];
