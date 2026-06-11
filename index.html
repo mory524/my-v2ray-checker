@@ -176,8 +176,9 @@
         .result-item.dead { opacity: 0.5; text-decoration: line-through; }
         .qr-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 20px; }
         .qr-card { background: #1e1e2e; border-radius: 16px; padding: 15px; text-align: center; }
-        .qr-code { background: white; padding: 10px; border-radius: 12px; display: inline-block; margin: 10px 0; }
+        .qr-code { background: white; padding: 10px; border-radius: 12px; display: inline-block; margin: 10px 0; min-height: 120px; }
         .qr-code canvas { width: 120px; height: 120px; }
+        .qr-error { color: #f38ba8; font-size: 11px; padding: 10px; }
         textarea {
             width: 100%;
             padding: 12px;
@@ -380,7 +381,7 @@
         // تشخیص مرورگر
         const isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
         
-        // تنظیم وضعیت سرور در هدر (همیشه سبز برای فایرفاکس)
+        // تنظیم وضعیت سرور در هدر
         if (isFirefox) {
             const statusDiv = document.getElementById('serverStatus');
             if (statusDiv) {
@@ -403,9 +404,8 @@
             }
         }
 
-        // تابع تست واقعی با پشتیبانی از فایرفاکس
+        // تابع تست واقعی با پشتیبانی از فایرفاکس و اصلاح latency
         async function realTestViaAPI(config, timeout = 10000) {
-            // انتخاب API مناسب بر اساس مرورگر
             const apisToTry = isFirefox ? FIREFOX_API_LIST : [API_URL];
             
             for (const apiUrl of apisToTry) {
@@ -417,30 +417,18 @@
                     }, 15000);
                     const result = await response.json();
                     if (result && (result.alive === true || result.alive === false)) {
-                        return result;
+                        // اصلاح مقدار latency: اگر -1 بود یا وجود نداشت، مقدار 999 بگذار
+                        let latency = result.latency;
+                        if (latency === -1 || latency === null || latency === undefined || latency < 0) {
+                            latency = 999;
+                        }
+                        return { alive: result.alive, latency: latency, message: result.message };
                     }
                 } catch(e) {
                     continue;
                 }
             }
-            return { alive: false, message: 'خطا در اتصال به سرور' };
-        }
-
-        // تابع چک سلامت سرور
-        async function checkServerHealth() {
-            const apisToTry = isFirefox ? FIREFOX_API_LIST : [API_URL];
-            
-            for (const apiUrl of apisToTry) {
-                try {
-                    const response = await fetchWithTimeout(`${apiUrl}/health`, { method: 'GET' }, 5000);
-                    if (response.ok) {
-                        return true;
-                    }
-                } catch(e) {
-                    continue;
-                }
-            }
-            return false;
+            return { alive: false, latency: 999, message: 'خطا در اتصال به سرور' };
         }
 
         function addLog(message, type = 'info', isManual = false) {
@@ -567,7 +555,7 @@
                     const result = await realTestViaAPI(config, settings.maxLatency);
                     
                     if (result.alive) {
-                        const latency = result.latency || 0;
+                        const latency = result.latency || 999;
                         activeConfigs.push({ latency, config, host, port, name, type });
                         addLog(`✅ تأیید شد: ${host}:${port} (${type}) | ${latency}ms`, 'verified');
                     } else {
@@ -580,7 +568,8 @@
                 document.getElementById('progressLabel').innerHTML = `⏳ تست واقعی ${i+1} از ${total} کانفیگ...`;
             }
             
-            activeConfigs.sort((a, b) => a.latency - b.latency);
+            // مرتب‌سازی و نمایش (کانفیگ با latency کمتر در بالا)
+            activeConfigs.sort((a, b) => (a.latency || 999) - (b.latency || 999));
             topConfigs = activeConfigs.slice(0, 5);
             
             const resultsList = document.getElementById('resultsList');
@@ -589,10 +578,11 @@
             } else {
                 for (let i = 0; i < Math.min(activeConfigs.length, 50); i++) {
                     const c = activeConfigs[i];
+                    const latencyDisplay = (c.latency === 999 || c.latency === -1) ? 'نامشخص' : `${c.latency}ms`;
                     const medal = i < 5 ? (i === 0 ? '🏆 ' : i === 1 ? '🥈 ' : i === 2 ? '🥉 ' : '📌 ') : '   ';
                     const resultDiv = document.createElement('div');
                     resultDiv.className = 'result-item verified';
-                    resultDiv.innerHTML = `${medal} ✅ ${c.host}:${c.port} (${c.type}) | ${c.latency}ms | ${c.name}`;
+                    resultDiv.innerHTML = `${medal} ✅ ${c.host}:${c.port} (${c.type}) | ${latencyDisplay} | ${c.name}`;
                     resultsList.appendChild(resultDiv);
                 }
             }
@@ -692,8 +682,9 @@
                     
                     if (result.alive) {
                         liveCount++;
+                        const latencyDisplay = (result.latency === 999 || result.latency === -1) ? 'نامشخص' : `${result.latency}ms`;
                         resultDiv.innerHTML = resultDiv.innerHTML.replace(`🔄 تست ${i+1}/${configsToTest.length}: ${host}:${port} (${type})...`, 
-                            `✅ تأیید شد: ${host}:${port} (${type}) | ${result.latency}ms | ${name}`);
+                            `✅ تأیید شد: ${host}:${port} (${type}) | ${latencyDisplay} | ${name}`);
                     } else {
                         resultDiv.innerHTML = resultDiv.innerHTML.replace(`🔄 تست ${i+1}/${configsToTest.length}: ${host}:${port} (${type})...`, 
                             `❌ رد شد: ${host}:${port} (${type}) | دلیل: ${result.message || 'نامشخص'}`);
@@ -708,46 +699,81 @@
             updateStatus(`✅ تست دستی کامل شد - ${liveCount} کانفیگ تأیید شده`);
         }
 
+        // تابع اصلاح شده ساخت QR Code با مدیریت خطا
         function createQRCode(elementId, text) {
+            const container = document.getElementById(elementId);
+            if (!container) return false;
+            
+            container.innerHTML = '';
+            
             try {
-                const container = document.getElementById(elementId);
-                if (!container) return false;
-                container.innerHTML = '';
+                // محدود کردن طول متن برای QR Code (حداکثر 2500 کاراکتر)
                 let qrText = text;
-                if (qrText.length > 2000) qrText = qrText.substring(0, 1900) + '...';
-                new QRCode(container, { text: qrText, width: 120, height: 120 });
+                if (qrText.length > 2200) {
+                    qrText = qrText.substring(0, 2150);
+                    console.warn(`QR متن کوتاه شد از ${text.length} به ${qrText.length}`);
+                }
+                
+                new QRCode(container, {
+                    text: qrText,
+                    width: 120,
+                    height: 120,
+                    colorDark: "#000000",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.L  // استفاده از L برای پشتیبانی از متن طولانی‌تر
+                });
                 return true;
             } catch(e) {
-                container.innerHTML = '<div style="font-size:11px;color:red;">❌ QR failed</div>';
+                console.error('QR Error:', e);
+                container.innerHTML = '<div class="qr-error">❌ QR Code<br>ساخته نشد</div>';
                 return false;
             }
         }
 
+        // تابع اصلاح شده برای نمایش 5 کانفیگ برتر
         function refreshTopConfigs() {
             const grid = document.getElementById('topGrid');
             grid.innerHTML = '';
+            
             if (!topConfigs.length) {
-                grid.innerHTML = '<div style="text-align:center; padding:40px;">⚠️ هنوز کانفیگ ۱۰۰٪ تضمینی وجود ندارد!</div>';
+                grid.innerHTML = '<div style="text-align:center; padding:40px;">⚠️ هنوز کانفیگ ۱۰۰٪ تضمینی وجود ندارد! لطفاً ابتدا تست واقعی را انجام دهید.</div>';
                 return;
             }
+            
             for (let i = 0; i < topConfigs.length; i++) {
                 const c = topConfigs[i];
                 const rank = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`;
                 const rankColor = i === 0 ? '#f9e2af' : '#89b4fa';
-                const qrId = `qr-${i}-${Date.now()}`;
+                const latencyDisplay = (c.latency === 999 || c.latency === -1) ? 'نامشخص' : `${c.latency}ms`;
+                const qrId = `qr-${i}-${Date.now()}-${Math.random()}`;
+                
                 const card = document.createElement('div');
                 card.className = 'qr-card';
                 card.innerHTML = `
-                    <h3 style="color: ${rankColor};">${rank} ${c.name} (${c.type})</h3>
+                    <h3 style="color: ${rankColor};">${rank} ${escapeHtml(c.name)} (${c.type})</h3>
                     <p>📍 ${c.host}:${c.port}</p>
-                    <p>⚡ تاخیر: ${c.latency}ms</p>
+                    <p>⚡ تاخیر: ${latencyDisplay}</p>
                     <div class="qr-code" id="${qrId}"></div>
-                    <button class="btn btn-primary" onclick="copyConfig('${c.config.replace(/'/g, "\\'")}')">📋 کپی</button>
-                    <p style="font-size:0.7em; margin-top:10px;">${c.config.substring(0, 50)}...</p>
+                    <button class="btn btn-primary" onclick="copyConfig('${escapeHtml(c.config).replace(/'/g, "\\'")}')">📋 کپی کانفیگ</button>
+                    <p style="font-size:0.65em; margin-top:10px; word-break:break-all; color:#a6adc8;">${c.config.substring(0, 55)}...</p>
                 `;
                 grid.appendChild(card);
-                setTimeout(() => createQRCode(qrId, c.config), 100);
+                
+                // تاخیر برای ساخت QR Code
+                setTimeout(() => {
+                    createQRCode(qrId, c.config);
+                }, 100);
             }
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
         }
 
         function copyConfig(config) {
@@ -762,7 +788,8 @@
             let text = '# V2Ray Configs - کانفیگ‌های تضمینی\n';
             text += `# تاریخ: ${new Date().toLocaleString()}\n# تعداد: ${activeConfigs.length}\n\n`;
             activeConfigs.forEach((c, i) => {
-                text += `# ${i+1}. ${c.host}:${c.port} (${c.type}) - ${c.latency}ms\n${c.config}\n\n`;
+                const latencyDisplay = (c.latency === 999 || c.latency === -1) ? 'نامشخص' : `${c.latency}ms`;
+                text += `# ${i+1}. ${c.host}:${c.port} (${c.type}) - ${latencyDisplay}\n${c.config}\n\n`;
             });
             const blob = new Blob([text], { type: 'text/plain' });
             const a = document.createElement('a');
@@ -824,9 +851,6 @@
             localStorage.setItem('v2ray_real_settings', JSON.stringify(settings));
             closeSettings();
             updateStatus('✅ تنظیمات ذخیره شد!');
-            if (isFirefox) {
-                alert('⚠️ توجه: در فایرفاکس ممکن است نیاز به رفرش صفحه باشد (F5)');
-            }
         }
 
         function openSettings() {
