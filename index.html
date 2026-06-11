@@ -814,6 +814,246 @@
 
         // بارگذاری تنظیمات هنگام شروع
         loadSettings();
+        // ==================== وضعیت سرور و بیدارساز خودکار ====================
+let serverStatus = { isAwake: false, checking: false, lastCheck: 0 };
+let wakeUpAttempts = 0;
+
+// بررسی وضعیت سرور
+async function checkServerStatus() {
+    if (serverStatus.checking) return;
+    serverStatus.checking = true;
+    
+    const statusIndicator = document.getElementById('serverStatus');
+    if (statusIndicator) {
+        statusIndicator.innerHTML = '<span class="spinner-small"></span> در حال بررسی سرور...';
+    }
+    
+    try {
+        const startTime = Date.now();
+        const response = await fetch(`${API_URL}/health`, {
+            method: 'GET',
+            signal: AbortSignal.timeout(5000)
+        });
+        const latency = Date.now() - startTime;
+        
+        if (response.ok) {
+            serverStatus.isAwake = true;
+            serverStatus.lastCheck = Date.now();
+            if (statusIndicator) {
+                statusIndicator.innerHTML = '🟢 سرور واسط فعال است';
+                statusIndicator.className = 'server-status online';
+            }
+            updateStatus('🟢 سرور رابط فعال - آماده برای تست');
+            return true;
+        } else {
+            throw new Error('پاسخ نامعتبر');
+        }
+    } catch(e) {
+        serverStatus.isAwake = false;
+        if (statusIndicator) {
+            statusIndicator.innerHTML = '🟡 سرور واسط در حال بیدار شدن...';
+            statusIndicator.className = 'server-status waking';
+        }
+        updateStatus('⚠️ سرور رابط در حال بیدار شدن - لطفاً چند ثانیه صبر کنید...');
+        
+        // تلاش برای بیدار کردن سرور
+        const woken = await wakeUpServer();
+        if (woken) {
+            serverStatus.isAwake = true;
+            if (statusIndicator) {
+                statusIndicator.innerHTML = '🟢 سرور واسط فعال شد';
+                statusIndicator.className = 'server-status online';
+            }
+            updateStatus('✅ سرور رابط بیدار شد - آماده برای تست');
+        }
+        return false;
+    } finally {
+        serverStatus.checking = false;
+    }
+}
+
+// بیدار کردن سرور با تلاش مجدد (مقاوم‌تر)
+async function wakeUpServerAdvanced(maxAttempts = 3) {
+    updateStatus('⏳ در حال بیدار کردن سرور رابط...');
+    
+    for (let i = 0; i < maxAttempts; i++) {
+        try {
+            addLog(`🔄 تلاش ${i+1} برای بیدار کردن سرور...`, 'info');
+            
+            // درخواست با timeout طولانی‌تر
+            const response = await fetch(`${API_URL}/health`, {
+                method: 'GET',
+                signal: AbortSignal.timeout(15000) // 15 ثانیه timeout
+            });
+            
+            if (response.ok) {
+                addLog(`✅ سرور رابط با موفقیت بیدار شد (تلاش ${i+1})`, 'success');
+                updateStatus('✅ سرور رابط فعال است');
+                return true;
+            }
+        } catch(e) {
+            addLog(`⚠️ تلاش ${i+1} ناموفق: ${e.message}`, 'warning');
+            if (i < maxAttempts - 1) {
+                await new Promise(r => setTimeout(r, 3000)); // صبر 3 ثانیه بین تلاش‌ها
+            }
+        }
+    }
+    
+    addLog(`❌ پس از ${maxAttempts} تلاش، سرور پاسخ نداد`, 'error');
+    updateStatus('❌ سرور رابط در دسترس نیست - لطفاً بعداً تلاش کنید');
+    return false;
+}
+
+// قبل از شروع تست خودکار، حتماً سرور را بیدار کن
+async function startAutoTestWithWake() {
+    // نمایش وضعیت سرور
+    showServerStatusModal();
+    
+    // بررسی و بیدار کردن سرور
+    updateStatus('🔍 بررسی وضعیت سرور رابط...');
+    addLog('🔐 بررسی وضعیت سرور واسط...', 'verified');
+    
+    const isReady = await wakeUpServerAdvanced(4);
+    
+    if (!isReady) {
+        alert('❌ سرور رابط در دسترس نیست!\nلطفاً چند دقیقه دیگر تلاش کنید یا آدرس سرور را در تنظیمات تغییر دهید.');
+        return;
+    }
+    
+    // پس از بیدار شدن، تست را شروع کن
+    startAutoTest();
+}
+
+// نمایش مودال وضعیت سرور
+function showServerStatusModal() {
+    let modal = document.getElementById('serverStatusModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'serverStatusModal';
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 400px; text-align: center;">
+                <div class="modal-header">
+                    <h2>🌐 وضعیت سرور رابط</h2>
+                    <button class="close-modal" onclick="closeServerStatusModal()">✕</button>
+                </div>
+                <div id="serverStatusDetails" style="padding: 20px;">
+                    <div class="spinner"></div>
+                    <p style="margin-top: 15px;">در حال بررسی وضعیت سرور...</p>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+    modal.classList.add('active');
+    
+    // به‌روزرسانی وضعیت مودال
+    const updateModal = setInterval(async () => {
+        const statusDiv = document.getElementById('serverStatusDetails');
+        if (!statusDiv) return;
+        
+        try {
+            const startTime = Date.now();
+            const response = await fetch(`${API_URL}/health`, { signal: AbortSignal.timeout(5000) });
+            const latency = Date.now() - startTime;
+            
+            if (response.ok) {
+                statusDiv.innerHTML = `
+                    <div style="font-size: 48px;">🟢</div>
+                    <h3 style="color: #a6e3a1;">سرور فعال است</h3>
+                    <p>⏱️ زمان پاسخ: ${latency}ms</p>
+                    <p>✅ آماده برای تست واقعی</p>
+                `;
+                setTimeout(() => closeServerStatusModal(), 2000);
+                clearInterval(updateModal);
+            } else {
+                statusDiv.innerHTML = `
+                    <div style="font-size: 48px;">🟡</div>
+                    <h3 style="color: #fab387;">سرور در حال بیدار شدن...</h3>
+                    <p>لطفاً چند ثانیه صبر کنید</p>
+                    <div class="spinner"></div>
+                `;
+            }
+        } catch(e) {
+            statusDiv.innerHTML = `
+                <div style="font-size: 48px;">🔴</div>
+                <h3 style="color: #f38ba8;">سرور در دسترس نیست</h3>
+                <p>سرور ممکن است در حال بیدار شدن باشد</p>
+                <button class="btn btn-primary" onclick="location.reload()" style="margin-top: 15px;">🔄 تلاش مجدد</button>
+            `;
+        }
+    }, 2000);
+}
+
+function closeServerStatusModal() {
+    const modal = document.getElementById('serverStatusModal');
+    if (modal) modal.classList.remove('active');
+}
+
+// همچنین دکمه تست خودکار را به نسخه جدید متصل کنید
+// این بخش را در تابعی که قبلاً دارید جایگزین کنید
+// document.getElementById('autoTestBtn').onclick = startAutoTestWithWake;
+
+// نمایش وضعیت سرور در هدر سایت
+function addServerStatusToHeader() {
+    const header = document.querySelector('.header');
+    if (header && !document.getElementById('serverStatus')) {
+        const statusDiv = document.createElement('div');
+        statusDiv.id = 'serverStatus';
+        statusDiv.className = 'server-status';
+        statusDiv.style.cssText = `
+            display: inline-block;
+            margin-top: 10px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75em;
+            font-weight: bold;
+            background: #313244;
+        `;
+        header.appendChild(statusDiv);
+    }
+}
+
+// اضافه کردن استایل برای اسپینر کوچک
+const style = document.createElement('style');
+style.textContent = `
+    .spinner-small {
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        border: 2px solid #45475a;
+        border-top-color: #89b4fa;
+        border-radius: 50%;
+        animation: spin 0.6s linear infinite;
+        vertical-align: middle;
+        margin-left: 5px;
+    }
+    .server-status.online { background: #a6e3a120; color: #a6e3a1; border-right: 3px solid #a6e3a1; }
+    .server-status.waking { background: #fab38720; color: #fab387; border-right: 3px solid #fab387; }
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+`;
+document.head.appendChild(style);
+
+// جایگزینی دکمه تست خودکار
+// این کار را بعد از لود صفحه انجام بده
+window.addEventListener('DOMContentLoaded', () => {
+    addServerStatusToHeader();
+    const autoBtn = document.getElementById('autoTestBtn');
+    if (autoBtn && autoBtn.getAttribute('data-upgraded') !== 'true') {
+        const originalClick = autoBtn.onclick;
+        autoBtn.onclick = async (e) => {
+            e.preventDefault();
+            await startAutoTestWithWake();
+        };
+        autoBtn.setAttribute('data-upgraded', 'true');
+    }
+    
+    // بررسی خودکار وضعیت سرور هر 30 ثانیه
+    checkServerStatus();
+    setInterval(checkServerStatus, 30000);
+});
     </script>
 </body>
 </html>
