@@ -845,29 +845,90 @@
             resultDiv.innerHTML += `<div class="result-item verified" style="margin-top:15px; text-align:center;">📊 خلاصه: ${liveCount} کانفیگ ۱۰۰٪ تضمینی از ${configsToTest.length}</div>`;
             updateStatus(`✅ تست دستی کامل شد - ${liveCount} کانفیگ تأیید شده`);
         }
-
-        function createQRCode(elementId, text) {
-            try {
-                const container = document.getElementById(elementId);
-                if (!container) return false;
-                container.innerHTML = '';
-                let qrText = text;
-                if (qrText.length > 2000) qrText = qrText.substring(0, 1900) + '...';
-                new QRCode(container, {
-                    text: qrText,
-                    width: 120,
-                    height: 120,
-                    colorDark: "#000000",
-                    colorLight: "#ffffff",
-                    correctLevel: QRCode.CorrectLevel.M
-                });
-                return true;
-            } catch(e) {
-                container.innerHTML = '<div style="font-size:11px;color:red;">❌ QR failed</div>';
-                return false;
-            }
+// ==================== تابع اصلاح شده ساخت QR Code ====================
+function createQRCode(elementId, text) {
+    const container = document.getElementById(elementId);
+    if (!container) {
+        console.error('عنصر یافت نشد:', elementId);
+        return false;
+    }
+    
+    container.innerHTML = '';
+    
+    try {
+        let qrText = text;
+        // محدود کردن طول متن برای QR
+        if (qrText.length > 2000) {
+            qrText = qrText.substring(0, 1900);
         }
+        
+        // ساخت QR Code با تنظیمات بهینه
+        new QRCode(container, {
+            text: qrText,
+            width: 120,
+            height: 120,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.L  // سطح L برای پشتیبانی از متن بیشتر
+        });
+        return true;
+    } catch(e) {
+        console.error('خطا در ساخت QR:', e);
+        container.innerHTML = '<div class="qr-error">❌ QR<br>ساخته نشد</div>';
+        return false;
+    }
+}
 
+// ==================== تابع اصلاح شده refreshTopConfigs ====================
+function refreshTopConfigs() {
+    const grid = document.getElementById('topGrid');
+    grid.innerHTML = '';
+    
+    if (!topConfigs.length) {
+        grid.innerHTML = '<div style="text-align:center; padding:40px;">⚠️ هنوز کانفیگ ۱۰۰٪ تضمینی وجود ندارد! لطفاً ابتدا تست واقعی را انجام دهید.</div>';
+        return;
+    }
+
+    for (let i = 0; i < topConfigs.length; i++) {
+        const c = topConfigs[i];
+        const rank = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`;
+        const rankColor = i === 0 ? '#f9e2af' : '#89b4fa';
+        const latencyDisplay = (c.latency === 999 || c.latency === -1) ? 'نامشخص' : `${c.latency}ms`;
+        
+        // ایجاد ID یکتا برای هر QR
+        const qrId = `qr-${i}-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+        
+        const card = document.createElement('div');
+        card.className = 'qr-card';
+        card.innerHTML = `
+            <h3 style="color: ${rankColor};">${rank} ${escapeHtml(c.name)} (${c.type})</h3>
+            <p>📍 ${c.host}:${c.port}</p>
+            <p>⚡ تاخیر: ${latencyDisplay}</p>
+            <div class="qr-code" id="${qrId}"></div>
+            <button class="btn btn-primary" onclick="copyConfig('${escapeHtml(c.config).replace(/'/g, "\\'")}')">📋 کپی کانفیگ</button>
+            <p style="font-size:0.65em; margin-top:10px; word-break:break-all; color:#a6adc8;">${c.config.substring(0, 55)}...</p>
+        `;
+        grid.appendChild(card);
+        
+        // تاخیر برای اطمینان از ایجاد DOM و سپس ساخت QR
+        setTimeout(() => {
+            createQRCode(qrId, c.config);
+        }, 150);
+    }
+}
+
+// تابع escape برای جلوگیری از خطا در کاراکترهای خاص
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, function(m) {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        return m;
+    }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
+        return c;
+    });
+}
         function refreshTopConfigs() {
             const grid = document.getElementById('topGrid');
             grid.innerHTML = '';
