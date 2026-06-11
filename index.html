@@ -36,6 +36,7 @@
             font-weight: bold;
             margin-top: 8px;
         }
+          /* هشدار فایرفاکس */
         .firefox-warning {
             background: #f38ba8;
             color: #1e1e2e;
@@ -43,8 +44,12 @@
             border-radius: 12px;
             margin-bottom: 20px;
             text-align: center;
-            display: none;
+            border-right: 4px solid #1e1e2e;
         }
+         .firefox-warning .warning-icon { font-size: 24px; margin-bottom: 8px; }
+        .firefox-warning .warning-title { font-weight: bold; margin-bottom: 8px; font-size: 1.1em; }
+        .firefox-warning .warning-text { font-size: 0.85em; margin-bottom: 10px; }
+        .firefox-warning .suggestion { font-size: 0.9em; font-weight: bold; }
         .settings-btn {
             position: fixed;
             bottom: 20px;
@@ -337,15 +342,19 @@
 </head>
 <body>
     <div class="container">
-        <div class="header">
+       <div class="header">
             <h1>🚀 V2Ray Config Checker Pro</h1>
-            <p>نسخه Real Test </p>
-           
+            <p>نسخه Real Test | تست واقعی از طریق سرور واسط + تنظیمات پیشرفته</p>
+            <span class="badge">✓ تست واقعی | ✓ 100% تضمینی | ✓ بدون خطای -1</span>
             <div id="serverStatus" class="server-status waking">🟡 در حال بررسی سرور...</div>
         </div>
 
-        <div id="firefoxWarning" class="firefox-warning">
-            <div>⚠️ توجه: مرورگر فایرفاکس محدودیت دارد. لطفاً از کروم یا اج استفاده کنید.</div>
+           <!-- هشدار فایرفاکس - فقط برای کاربران فایرفاکس نمایش داده می‌شود -->
+        <div id="firefoxWarning" class="firefox-warning" style="display: none;">
+            <div class="warning-icon">⚠️</div>
+            <div class="warning-title">توجه: مشکل سازگاری با مرورگر فایرفاکس</div>
+            <div class="warning-text">مرورگر فایرفاکس به دلیل محدودیت‌های امنیتی، نمی‌تواند به درستی با سرور تست واقعی ارتباط برقرار کند.</div>
+            <div class="suggestion">✅ پیشنهاد: لطفاً از مرورگر <span style="color: #1e1e2e;">Google Chrome</span> یا <span style="color: #1e1e2e;">Microsoft Edge</span> استفاده کنید.</div>
         </div>
 
         <div class="tabs">
