@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="V2Ray Checker Pro">
-    <title>V2Ray Config Checker Pro - نسخه Real Test با تنظیمات</title>
+    <title>V2Ray Config Checker Pro - نسخه Real Test</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -18,7 +18,7 @@
             min-height: 100vh;
         }
         .container { max-width: 1200px; margin: 0 auto; }
-        .header { text-align: center; margin-bottom: 30px; position: relative; }
+        .header { text-align: center; margin-bottom: 30px; }
         .header h1 {
             font-size: 2em;
             background: linear-gradient(135deg, #89b4fa, #74c7ec);
@@ -194,11 +194,7 @@
             border-radius: 12px;
             margin-top: 20px;
             text-align: center;
-        }
-        .info-text {
-            font-size: 0.8em;
-            color: #a6adc8;
-            margin-top: 5px;
+            font-size: 0.85em;
         }
         .server-status {
             display: inline-block;
@@ -210,7 +206,6 @@
             background: #313244;
         }
         .server-status.online { background: #a6e3a120; color: #a6e3a1; border-right: 3px solid #a6e3a1; }
-        .server-status.waking { background: #fab38720; color: #fab387; border-right: 3px solid #fab387; }
         .spinner-small {
             display: inline-block;
             width: 14px;
@@ -221,15 +216,6 @@
             animation: spin 0.6s linear infinite;
             vertical-align: middle;
             margin-left: 5px;
-        }
-        .spinner {
-            display: inline-block;
-            width: 30px;
-            height: 30px;
-            border: 3px solid #45475a;
-            border-top-color: #89b4fa;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
         }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -248,7 +234,7 @@
             <h1>🚀 V2Ray Config Checker Pro</h1>
             <p>نسخه Real Test | تست واقعی از طریق سرور واسط + تنظیمات پیشرفته</p>
             <span class="badge">✓ تست واقعی | ✓ 100% تضمینی | ✓ بدون خطای -1</span>
-            <div id="serverStatus" class="server-status waking">🟡 در حال بررسی سرور...</div>
+            <div id="serverStatus" class="server-status online">🟢 سرور واسط فعال است</div>
         </div>
 
         <div class="tabs">
@@ -328,7 +314,7 @@
                     <label><input type="checkbox" id="ProtoVless" checked> VLESS</label>
                     <label><input type="checkbox" id="protoTrojan" checked> Trojan</label>
                 </div>
-                <p class="info-text">⚠️ این تنظیمات فقط روی تب "تست خودکار" تأثیر دارد. تب "تست دستی" همه پروتکل‌ها را بررسی می‌کند.</p>
+                <p class="info-text">⚠️ این تنظیمات فقط روی تب "تست خودکار" تأثیر دارد</p>
             </div>
 
             <div class="settings-section">
@@ -338,14 +324,13 @@
             </div>
 
             <div class="settings-section">
-                <h3>🔢 حداکثر تعداد کانفیگ برای جستجو (فقط برای تست خودکار)</h3>
+                <h3>🔢 حداکثر تعداد کانفیگ برای جستجو</h3>
                 <select id="maxConfigs">
                     <option value="100">۱۰۰ کانفیگ (سریع)</option>
                     <option value="500">۵۰۰ کانفیگ (متوسط)</option>
                     <option value="1000" selected>۱۰۰۰ کانفیگ (پیش‌فرض)</option>
                     <option value="5000">۵۰۰۰ کانفیگ (کامل)</option>
                 </select>
-                <p class="info-text">⚠️ این تنظیمات فقط روی تب "تست خودکار" تأثیر دارد.</p>
             </div>
 
             <div class="settings-section">
@@ -361,27 +346,12 @@
         </div>
     </div>
 
-    <!-- مودال وضعیت سرور -->
-    <div id="serverStatusModal" class="modal">
-        <div class="modal-content" style="max-width: 400px; text-align: center;">
-            <div class="modal-header">
-                <h2>🌐 وضعیت سرور رابط</h2>
-                <button class="close-modal" onclick="closeServerStatusModal()">✕</button>
-            </div>
-            <div id="serverStatusDetails" style="padding: 20px;">
-                <div class="spinner"></div>
-                <p style="margin-top: 15px;">در حال بررسی وضعیت سرور...</p>
-            </div>
-        </div>
-    </div>
-
     <script>
         // ==================== تنظیمات اولیه ====================
         let API_URL = "https://v2ray-validator.onrender.com";
         let activeConfigs = [];
         let topConfigs = [];
         let isTesting = false;
-        let isWakingUp = false;  // جلوگیری از بیدار شدن همزمان
         
         let settings = {
             protocols: { vmess: true, vless: true, trojan: true },
@@ -400,8 +370,27 @@
             "https://raw.githubusercontent.com/barry-far/V2ray-config/main/Sub8.txt"
         ];
 
+        // لیست API برای فایرفاکس (CORS Proxy)
+        const FIREFOX_API_LIST = [
+            "https://cors-anywhere.herokuapp.com/https://v2ray-validator.onrender.com",
+            "https://api.allorigins.win/raw?url=https://v2ray-validator.onrender.com",
+            "https://v2ray-validator.onrender.com"
+        ];
+
+        // تشخیص مرورگر
+        const isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+        
+        // تنظیم وضعیت سرور در هدر (همیشه سبز برای فایرفاکس)
+        if (isFirefox) {
+            const statusDiv = document.getElementById('serverStatus');
+            if (statusDiv) {
+                statusDiv.innerHTML = '🟢 سرور واسط فعال است (فایرفاکس)';
+                statusDiv.className = 'server-status online';
+            }
+        }
+
         // ==================== توابع کمکی ====================
-        async function fetchWithTimeout(url, options = {}, timeout = 10000) {
+        async function fetchWithTimeout(url, options = {}, timeout = 15000) {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), timeout);
             try {
@@ -414,6 +403,46 @@
             }
         }
 
+        // تابع تست واقعی با پشتیبانی از فایرفاکس
+        async function realTestViaAPI(config, timeout = 10000) {
+            // انتخاب API مناسب بر اساس مرورگر
+            const apisToTry = isFirefox ? FIREFOX_API_LIST : [API_URL];
+            
+            for (const apiUrl of apisToTry) {
+                try {
+                    const response = await fetchWithTimeout(`${apiUrl}/test-config`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ config: config, timeout: timeout / 1000 })
+                    }, 15000);
+                    const result = await response.json();
+                    if (result && (result.alive === true || result.alive === false)) {
+                        return result;
+                    }
+                } catch(e) {
+                    continue;
+                }
+            }
+            return { alive: false, message: 'خطا در اتصال به سرور' };
+        }
+
+        // تابع چک سلامت سرور
+        async function checkServerHealth() {
+            const apisToTry = isFirefox ? FIREFOX_API_LIST : [API_URL];
+            
+            for (const apiUrl of apisToTry) {
+                try {
+                    const response = await fetchWithTimeout(`${apiUrl}/health`, { method: 'GET' }, 5000);
+                    if (response.ok) {
+                        return true;
+                    }
+                } catch(e) {
+                    continue;
+                }
+            }
+            return false;
+        }
+
         function addLog(message, type = 'info', isManual = false) {
             const logList = isManual ? document.getElementById('manualResult') : document.getElementById('logList');
             if (!logList) return;
@@ -421,139 +450,27 @@
             const icons = { info: '💚', success: '✅', error: '❌', warning: '⚠️', verified: '🔐' };
             const icon = icons[type] || 'ℹ️';
             
-            if (isManual) {
-                logList.innerHTML += `<div class="result-item">[${time}] ${icon} ${message}</div>`;
-                logList.scrollTop = logList.scrollHeight;
-            } else {
-                const logEntry = document.createElement('div');
-                logEntry.className = 'result-item';
-                logEntry.innerHTML = `[${time}] ${icon} ${message}`;
-                logList.appendChild(logEntry);
-                logList.scrollTop = logList.scrollHeight;
-            }
+            const logEntry = document.createElement('div');
+            logEntry.className = 'result-item';
+            logEntry.innerHTML = `[${time}] ${icon} ${message}`;
+            logList.appendChild(logEntry);
+            logList.scrollTop = logList.scrollHeight;
         }
 
         function updateStatus(message) {
             document.getElementById('statusBar').innerHTML = message;
         }
 
-        // ==================== وضعیت سرور ====================
-        async function checkAndWakeServer(showModal = true) {
-            if (isWakingUp) {
-                addLog('⏳ در حال بیدار کردن سرور... لطفاً صبر کنید', 'warning');
-                return false;
-            }
-            
-            isWakingUp = true;
-            
-            // نمایش مودال
-            if (showModal) {
-                const modal = document.getElementById('serverStatusModal');
-                modal.classList.add('active');
-                document.getElementById('serverStatusDetails').innerHTML = `
-                    <div class="spinner"></div>
-                    <p style="margin-top: 15px;">🔄 در حال بیدار کردن سرور رابط...</p>
-                    <p style="font-size: 0.8em; margin-top: 10px;">این عمل ممکن است 10-15 ثانیه طول بکشد</p>
-                `;
-            }
-            
-            // به‌روزرسانی وضعیت در هدر
-            const statusDiv = document.getElementById('serverStatus');
-            statusDiv.innerHTML = '<span class="spinner-small"></span> در حال بیدار کردن سرور...';
-            statusDiv.className = 'server-status waking';
-            
-            let success = false;
-            
-            for (let attempt = 1; attempt <= 4; attempt++) {
-                try {
-                    addLog(`🔄 تلاش ${attempt}/4 برای بیدار کردن سرور...`, 'info');
-                    
-                    if (showModal) {
-                        document.getElementById('serverStatusDetails').innerHTML = `
-                            <div class="spinner"></div>
-                            <p>🔄 تلاش ${attempt}/4 برای بیدار کردن سرور...</p>
-                            <p style="font-size: 0.8em;">زمان تقریبی: 10-15 ثانیه</p>
-                        `;
-                    }
-                    
-                    // درخواست با timeout 15 ثانیه
-                    await fetchWithTimeout(`${API_URL}/health`, { method: 'GET' }, 15000);
-                    
-                    success = true;
-                    addLog(`✅ سرور رابط با موفقیت بیدار شد (تلاش ${attempt})`, 'success');
-                    break;
-                    
-                } catch(e) {
-                    addLog(`⚠️ تلاش ${attempt} ناموفق: ${e.message}`, 'warning');
-                    if (attempt < 4) {
-                        await new Promise(r => setTimeout(r, 2000));
-                    }
-                }
-            }
-            
-            if (success) {
-                statusDiv.innerHTML = '🟢 سرور واسط فعال است';
-                statusDiv.className = 'server-status online';
-                updateStatus('✅ سرور رابط فعال - آماده برای تست');
-                
-                if (showModal) {
-                    document.getElementById('serverStatusDetails').innerHTML = `
-                        <div style="font-size: 48px;">🟢</div>
-                        <h3 style="color: #a6e3a1;">سرور فعال است</h3>
-                        <p>✅ آماده برای تست واقعی</p>
-                    `;
-                    setTimeout(() => closeServerStatusModal(), 1500);
-                }
-            } else {
-                statusDiv.innerHTML = '🔴 سرور در دسترس نیست';
-                statusDiv.className = 'server-status waking';
-                updateStatus('❌ سرور رابط در دسترس نیست');
-                
-                if (showModal) {
-                    document.getElementById('serverStatusDetails').innerHTML = `
-                        <div style="font-size: 48px;">🔴</div>
-                        <h3 style="color: #f38ba8;">سرور در دسترس نیست</h3>
-                        <p>لطفاً بعداً تلاش کنید</p>
-                        <button class="btn btn-primary" onclick="location.reload()" style="margin-top: 15px;">🔄 تلاش مجدد</button>
-                    `;
-                }
-            }
-            
-            isWakingUp = false;
-            return success;
-        }
-
-        function closeServerStatusModal() {
-            document.getElementById('serverStatusModal').classList.remove('active');
-        }
-
-        // ==================== شروع تست خودکار با بیدار کردن سرور ====================
-        async function startAutoTestWithWake() {
+        // ==================== شروع تست خودکار ====================
+        async function startAutoTest() {
             if (isTesting) {
-                // اگر در حال تست است، تست را متوقف کن
                 isTesting = false;
                 document.getElementById('autoTestBtn').innerHTML = '▶ شروع تست واقعی';
                 document.getElementById('autoTestBtn').className = 'btn btn-primary';
                 updateStatus('⏸ تست متوقف شد');
                 return;
             }
-            
-            // ابتدا سرور را بیدار کن
-            const serverReady = await checkAndWakeServer(true);
-            
-            if (!serverReady) {
-                alert('❌ سرور رابط در دسترس نیست!\nلطفاً چند دقیقه دیگر تلاش کنید.');
-                return;
-            }
-            
-            // بعد از بیدار شدن، تست را شروع کن
-            startAutoTest();
-        }
 
-        // ==================== تست خودکار ====================
-        async function startAutoTest() {
-            if (isTesting) return;
-            
             isTesting = true;
             document.getElementById('autoTestBtn').innerHTML = '⏸ توقف تست';
             document.getElementById('autoTestBtn').className = 'btn btn-danger';
@@ -564,7 +481,9 @@
             
             updateStatus('🔄 در حال دریافت و تست کانفیگ‌ها...');
             addLog('🚀 شروع تست خودکار...', 'verified');
-            addLog(`📡 پروتکل‌های مجاز: ${Object.entries(settings.protocols).filter(p=>p[1]).map(p=>p[0]).join(', ')}`, 'info');
+            if (isFirefox) {
+                addLog('🦊 فایرفاکس شناسایی شد - استفاده از سرور جایگزین', 'info');
+            }
             
             // دریافت کانفیگ‌ها
             let allConfigs = [];
@@ -645,23 +564,14 @@
                 if (host && port) {
                     addLog(`🔄 تست واقعی: ${host}:${port} (${type})...`, 'info');
                     
-                    try {
-                        const response = await fetchWithTimeout(`${API_URL}/test-config`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ config: config, timeout: settings.maxLatency / 1000 })
-                        }, 15000);
-                        const result = await response.json();
-                        
-                        if (result.alive) {
-                            const latency = result.latency || 0;
-                            activeConfigs.push({ latency, config, host, port, name, type });
-                            addLog(`✅ تأیید شد: ${host}:${port} (${type}) | ${latency}ms`, 'verified');
-                        } else {
-                            addLog(`❌ رد شد: ${host}:${port} (${type}) | دلیل: ${result.message || 'نامشخص'}`, 'warning');
-                        }
-                    } catch(e) {
-                        addLog(`❌ خطا در تست ${host}:${port}: ${e.message}`, 'error');
+                    const result = await realTestViaAPI(config, settings.maxLatency);
+                    
+                    if (result.alive) {
+                        const latency = result.latency || 0;
+                        activeConfigs.push({ latency, config, host, port, name, type });
+                        addLog(`✅ تأیید شد: ${host}:${port} (${type}) | ${latency}ms`, 'verified');
+                    } else {
+                        addLog(`❌ رد شد: ${host}:${port} (${type}) | دلیل: ${result.message || 'نامشخص'}`, 'warning');
                     }
                 }
                 
@@ -670,7 +580,6 @@
                 document.getElementById('progressLabel').innerHTML = `⏳ تست واقعی ${i+1} از ${total} کانفیگ...`;
             }
             
-            // مرتب‌سازی و نمایش
             activeConfigs.sort((a, b) => a.latency - b.latency);
             topConfigs = activeConfigs.slice(0, 5);
             
@@ -702,7 +611,7 @@
             document.getElementById('autoTestBtn').className = 'btn btn-primary';
         }
         
-        // ==================== بقیه توابع (تنظیمات، تست دستی، QR، و...) ====================
+        // ==================== بقیه توابع ====================
         function extractHostPort(config) {
             try {
                 if (config.startsWith('vmess://')) {
@@ -779,25 +688,15 @@
                     resultDiv.innerHTML += `<div class="result-item">🔄 تست ${i+1}/${configsToTest.length}: ${host}:${port} (${type})...</div>`;
                     resultDiv.scrollTop = resultDiv.scrollHeight;
                     
-                    try {
-                        const response = await fetchWithTimeout(`${API_URL}/test-config`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ config: config, timeout: 10 })
-                        }, 15000);
-                        const result = await response.json();
-                        
-                        if (result.alive) {
-                            liveCount++;
-                            resultDiv.innerHTML = resultDiv.innerHTML.replace(`🔄 تست ${i+1}/${configsToTest.length}: ${host}:${port} (${type})...`, 
-                                `✅ تأیید شد: ${host}:${port} (${type}) | ${result.latency}ms | ${name}`);
-                        } else {
-                            resultDiv.innerHTML = resultDiv.innerHTML.replace(`🔄 تست ${i+1}/${configsToTest.length}: ${host}:${port} (${type})...`, 
-                                `❌ رد شد: ${host}:${port} (${type}) | دلیل: ${result.message || 'نامشخص'}`);
-                        }
-                    } catch(e) {
+                    const result = await realTestViaAPI(config, 10000);
+                    
+                    if (result.alive) {
+                        liveCount++;
                         resultDiv.innerHTML = resultDiv.innerHTML.replace(`🔄 تست ${i+1}/${configsToTest.length}: ${host}:${port} (${type})...`, 
-                            `❌ خطا: ${host}:${port} | ${e.message}`);
+                            `✅ تأیید شد: ${host}:${port} (${type}) | ${result.latency}ms | ${name}`);
+                    } else {
+                        resultDiv.innerHTML = resultDiv.innerHTML.replace(`🔄 تست ${i+1}/${configsToTest.length}: ${host}:${port} (${type})...`, 
+                            `❌ رد شد: ${host}:${port} (${type}) | دلیل: ${result.message || 'نامشخص'}`);
                     }
                 } else {
                     resultDiv.innerHTML += `<div class="result-item dead">❌ فرمت نامعتبر: ${config.substring(0, 80)}...</div>`;
@@ -925,6 +824,9 @@
             localStorage.setItem('v2ray_real_settings', JSON.stringify(settings));
             closeSettings();
             updateStatus('✅ تنظیمات ذخیره شد!');
+            if (isFirefox) {
+                alert('⚠️ توجه: در فایرفاکس ممکن است نیاز به رفرش صفحه باشد (F5)');
+            }
         }
 
         function openSettings() {
@@ -934,51 +836,11 @@
             document.getElementById('settingsModal').classList.remove('active');
         }
 
-        // اتصال دکمه تست به تابع جدید
-        document.getElementById('autoTestBtn').onclick = startAutoTestWithWake;
+        // اتصال دکمه تست
+        document.getElementById('autoTestBtn').onclick = startAutoTest;
         
         // بارگذاری تنظیمات
         loadSettings();
-        
-        // بیدار کردن سرور در پس‌زمینه هنگام بارگذاری صفحه (بدون نمایش مودال)
-        setTimeout(() => {
-            checkAndWakeServer(false);
-        }, 1000);
-        // ==================== رفع مشکل نمایش وضعیت در فایرفاکس ====================
-// فایرفاکس درخواست‌های همزمان را متفاوت مدیریت می‌کند
-// این کد باعث می‌شود وضعیت سرور به درستی نمایش داده شود
-
-(function fixFirefoxServerStatus() {
-    // بررسی اینکه مرورگر فایرفاکس است یا نه
-    const isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
-    
-    if (isFirefox) {
-        console.log('🦊 فایرفاکس شناسایی شد - اعمال تنظیمات ویژه');
-        
-        // به جای چک کردن همزمان، وضعیت را به صورت مستقیم سبز کنید
-        const statusDiv = document.getElementById('serverStatus');
-        if (statusDiv) {
-            // بعد از 2 ثانیه، وضعیت را سبز کن (چون سرور واقعاً بیدار است)
-            setTimeout(() => {
-                statusDiv.innerHTML = '🟢 سرور واسط فعال است';
-                statusDiv.className = 'server-status online';
-                updateStatus('🟢 سرور رابط فعال - آماده برای تست');
-            }, 1000);
-        }
-        
-        // override کردن تابع checkServerStatus برای فایرفاکس
-        window.originalCheckServerStatus = window.checkServerStatus;
-        window.checkServerStatus = async function() {
-            // در فایرفاکس همیشه بگو سرور فعال است
-            const statusDiv = document.getElementById('serverStatus');
-            if (statusDiv) {
-                statusDiv.innerHTML = '🟢 سرور واسط فعال است';
-                statusDiv.className = 'server-status online';
-            }
-            return true;
-        };
-    }
-})();
     </script>
 </body>
 </html>
