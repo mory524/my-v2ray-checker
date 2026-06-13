@@ -458,7 +458,7 @@
             "https://raw.githubusercontent.com/barry-far/V2ray-config/main/Sub8.txt"
         ];
 
-        // دیکشنری لوکیشن با پرچم (گسترده شده برای تشخیص بهتر)
+        // دیکشنری لوکیشن با پرچم
         const countryFlags = {
             'United States': '🇺🇸', 'US': '🇺🇸', 'USA': '🇺🇸', 'America': '🇺🇸',
             'Germany': '🇩🇪', 'DE': '🇩🇪',
@@ -508,11 +508,10 @@
             return `${flag} ${persian}`;
         }
 
-        // دریافت لوکیشن از IP با چندین API پشتیبان
+        // دریافت لوکیشن از IP
         async function getLocationForHost(host) {
             if (locationCache.has(host)) return locationCache.get(host);
             
-            // لیست API های پشتیبان
             const apis = [
                 async () => {
                     const res = await fetch(`https://ipapi.co/${host}/country/`, { signal: AbortSignal.timeout(3000) });
@@ -524,12 +523,6 @@
                     const res = await fetch(`https://ipwhois.app/json/${host}?fields=country`, { signal: AbortSignal.timeout(3000) });
                     const data = await res.json();
                     if (data.country) return data.country;
-                    return null;
-                },
-                async () => {
-                    const res = await fetch(`https://freeipapi.com/api/json/${host}`, { signal: AbortSignal.timeout(3000) });
-                    const data = await res.json();
-                    if (data.countryName) return data.countryName;
                     return null;
                 }
             ];
@@ -545,29 +538,24 @@
                 } catch(e) { continue; }
             }
             
-            // Fallback: حدس بر اساس پسوند دامنه و نام
             let guess = '🌍 نامشخص';
             const h = host.toLowerCase();
             if (h.includes('.ir') || h.includes('iran')) guess = '🇮🇷 ایران';
-            else if (h.includes('.us') || h.includes('usa') || h.includes('unitedstates')) guess = '🇺🇸 آمریکا';
-            else if (h.includes('.de') || h.includes('germany') || h.includes('frankfurt')) guess = '🇩🇪 آلمان';
-            else if (h.includes('.nl') || h.includes('netherlands') || h.includes('amsterdam')) guess = '🇳🇱 هلند';
-            else if (h.includes('.fr') || h.includes('france') || h.includes('paris')) guess = '🇫🇷 فرانسه';
+            else if (h.includes('.us') || h.includes('usa')) guess = '🇺🇸 آمریکا';
+            else if (h.includes('.de') || h.includes('germany')) guess = '🇩🇪 آلمان';
+            else if (h.includes('.nl') || h.includes('netherlands')) guess = '🇳🇱 هلند';
+            else if (h.includes('.fr') || h.includes('france')) guess = '🇫🇷 فرانسه';
             else if (h.includes('.uk') || h.includes('.gb') || h.includes('london')) guess = '🇬🇧 انگلستان';
             else if (h.includes('.ca') || h.includes('canada')) guess = '🇨🇦 کانادا';
-            else if (h.includes('.jp') || h.includes('japan') || h.includes('tokyo')) guess = '🇯🇵 ژاپن';
+            else if (h.includes('.jp') || h.includes('japan')) guess = '🇯🇵 ژاپن';
             else if (h.includes('.sg') || h.includes('singapore')) guess = '🇸🇬 سنگاپور';
-            else if (h.includes('.ru') || h.includes('russia') || h.includes('moscow')) guess = '🇷🇺 روسیه';
-            else if (h.includes('.tr') || h.includes('turkey') || h.includes('istanbul')) guess = '🇹🇷 ترکیه';
-            else if (h.includes('cloudflare')) guess = '☁️ کلودفلر';
-            else if (h.includes('amazon') || h.includes('aws')) guess = '☁️ آمازون';
-            else if (h.includes('google') || h.includes('gcp')) guess = '🔵 گوگل';
+            else if (h.includes('.ru') || h.includes('russia')) guess = '🇷🇺 روسیه';
+            else if (h.includes('.tr') || h.includes('turkey')) guess = '🇹🇷 ترکیه';
             
             locationCache.set(host, guess);
             return guess;
         }
 
-        // تشخیص مرورگر فایرفاکس
         const isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
         
         if (isFirefox) {
@@ -1037,17 +1025,20 @@
         }
 
         // ==================== ذخیره کانفیگ‌های یک دسته ====================
-        function saveLocationConfigs(location, configs) {
-            if (!configs.length) {
+        function saveLocationConfigs(location, configCount) {
+            // پیدا کردن کانفیگ‌های این لوکیشن
+            const configsToSave = activeConfigs.filter(c => (c.location || '🌍 نامشخص') === location);
+            
+            if (!configsToSave.length) {
                 alert('هیچ کانفیگی در این دسته وجود ندارد!');
                 return;
             }
             
             let text = `# V2Ray Configs - کانفیگ‌های ${location}\n`;
             text += `# تاریخ: ${new Date().toLocaleString()}\n`;
-            text += `# تعداد: ${configs.length}\n\n`;
+            text += `# تعداد: ${configsToSave.length}\n\n`;
             
-            configs.forEach((c, i) => {
+            configsToSave.forEach((c, i) => {
                 const latencyDisplay = (c.latency === 999 || c.latency === -1) ? 'نامشخص' : `${c.latency}ms`;
                 text += `# ${i+1}. ${c.host}:${c.port} (${c.type}) - ${latencyDisplay} - ${c.name}\n${c.config}\n\n`;
             });
@@ -1060,7 +1051,7 @@
             a.click();
             URL.revokeObjectURL(a.href);
             
-            updateStatus(`💾 ${configs.length} کانفیگ از ${location} ذخیره شد`);
+            updateStatus(`💾 ${configsToSave.length} کانفیگ از ${location} ذخیره شد`);
         }
 
         // ==================== دسته‌بندی لوکیشن با دکمه ذخیره ====================
@@ -1096,7 +1087,7 @@
                         <span>${location}</span>
                         <span class="count">${configs.length} کانفیگ</span>
                         <span class="arrow">▼</span>
-                        <button class="save-location-btn" onclick="event.stopPropagation(); saveLocationConfigs('${location.replace(/'/g, "\\'")}', ${JSON.stringify(configs).replace(/'/g, "\\'")})">💾 ذخیره این دسته</button>
+                        <button class="save-location-btn" onclick="event.stopPropagation(); saveLocationConfigs('${location.replace(/'/g, "\\'")}', ${configs.length})">💾 ذخیره این دسته</button>
                     </div>
                     <div id="${groupId}" class="location-configs"><div class="qr-grid"></div></div>
                 `;
