@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="V2Ray Checker Pro">
-    <title>V2Ray Config Checker Pro - با دسته‌بندی لوکیشن</title>
+    <title>V2Ray Config Checker Pro - نسخه حرفه‌ای با لوکیشن</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -184,20 +184,23 @@
         .result-item.verified { border-right: 4px solid #a6e3a1; background: #313244; }
         .result-item.dead { opacity: 0.5; text-decoration: line-through; }
         
+        /* استایل دسته‌بندی لوکیشن */
         .location-group {
             margin-bottom: 20px;
             background: #1e1e2e;
             border-radius: 16px;
             overflow: hidden;
+            border: 1px solid #313244;
         }
         .location-header {
             background: #313244;
-            padding: 12px 20px;
+            padding: 14px 20px;
             font-weight: bold;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
+            transition: all 0.2s ease;
         }
         .location-header:hover { background: #45475a; }
         .location-header .count {
@@ -206,14 +209,24 @@
             padding: 2px 10px;
             border-radius: 20px;
             font-size: 0.75em;
+            font-weight: bold;
         }
+        .location-header .arrow { margin-right: auto; font-size: 0.8em; }
         .location-configs { display: block; padding: 15px; }
         .location-configs.collapsed { display: none; }
         
-        .qr-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-        .qr-card { background: #1e1e2e; border-radius: 16px; padding: 15px; text-align: center; border: 1px solid #313244; }
-        .qr-code { background: white; padding: 10px; border-radius: 12px; display: inline-block; margin: 10px 0; min-height: 120px; }
-        .qr-code canvas { width: 120px; height: 120px; }
+        .qr-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)); gap: 15px; }
+        .qr-card {
+            background: #1e1e2e;
+            border-radius: 14px;
+            padding: 15px;
+            text-align: center;
+            border: 1px solid #313244;
+            transition: transform 0.2s;
+        }
+        .qr-card:hover { transform: translateY(-3px); border-color: #89b4fa; }
+        .qr-code { background: white; padding: 10px; border-radius: 12px; display: inline-block; margin: 10px 0; }
+        .qr-code canvas { width: 110px; height: 110px; }
         textarea {
             width: 100%;
             padding: 12px;
@@ -269,8 +282,8 @@
     <div class="container">
         <div class="header">
             <h1>🚀 V2Ray Config Checker Pro</h1>
-            <p>نسخه Real Test | تشخیص خودکار لوکیشن + دسته‌بندی جغرافیایی</p>
-            <span class="badge">✓ تست واقعی | ✓ تشخیص لوکیشن | ✓ دسته‌بندی کشور</span>
+            <p>نسخه Real Test | تشخیص خودکار لوکیشن + دسته‌بندی جغرافیایی حرفه‌ای</p>
+            <span class="badge">✓ تست واقعی | ✓ تشخیص لوکیشن | ✓ دسته‌بندی کشور | ✓ QR Code</span>
             <div id="serverStatus" class="server-status waking">🟡 در حال بررسی سرور...</div>
         </div>
 
@@ -287,7 +300,7 @@
         <div id="autoTab" class="tab-content active">
             <div class="card">
                 <h3>📡 تست خودکار با Real Test</h3>
-                <p style="margin: 10px 0; color: #a6e3a1;">✅ تست همزمان + تشخیص لوکیشن هر سرور</p>
+                <p style="margin: 10px 0; color: #a6e3a1;">✅ تست همزمان ۵ کانفیگ + تشخیص لوکیشن هر سرور</p>
                 <button class="btn btn-primary" id="autoTestBtn">▶ شروع تست واقعی</button>
                 <button class="btn btn-success" onclick="saveConfigs()" id="saveBtn" disabled>💾 ذخیره کانفیگ‌ها</button>
                 
@@ -336,7 +349,7 @@
                 <h3>📡 پروتکل‌های مجاز</h3>
                 <div class="checkbox-group">
                     <label><input type="checkbox" id="protoVmess" checked> VMess</label>
-                    <label><input type="checkbox" id="ProtoVless" checked> VLESS</label>
+                    <label><input type="checkbox" id="protoVless" checked> VLESS</label>
                     <label><input type="checkbox" id="protoTrojan" checked> Trojan</label>
                 </div>
             </div>
@@ -378,10 +391,9 @@
     </div>
 
     <script>
-        // ==================== تنظیمات اولیه ====================
+        // ==================== تنظیمات اصلی ====================
         let API_URL = "https://v2ray-validator.onrender.com";
         let activeConfigs = [];
-        let topConfigs = [];
         let isTesting = false;
         let isWakingUp = false;
         let locationCache = new Map();
@@ -403,8 +415,8 @@
             "https://raw.githubusercontent.com/barry-far/V2ray-config/main/Sub8.txt"
         ];
 
-        // دیکشنری پرچم و نام کشور
-        const countryNames = {
+        // دیکشنری نام کشورها به فارسی + پرچم
+        const countryMap = {
             'United States': '🇺🇸 آمریکا', 'Germany': '🇩🇪 آلمان', 'Netherlands': '🇳🇱 هلند',
             'France': '🇫🇷 فرانسه', 'United Kingdom': '🇬🇧 انگلستان', 'Canada': '🇨🇦 کانادا',
             'Japan': '🇯🇵 ژاپن', 'Singapore': '🇸🇬 سنگاپور', 'Russia': '🇷🇺 روسیه',
@@ -413,24 +425,29 @@
             'Poland': '🇵🇱 لهستان', 'Turkey': '🇹🇷 ترکیه', 'Iran': '🇮🇷 ایران',
             'UAE': '🇦🇪 امارات', 'Hong Kong': '🇭🇰 هنگ‌کنگ', 'South Korea': '🇰🇷 کره جنوبی',
             'Brazil': '🇧🇷 برزیل', 'Switzerland': '🇨🇭 سوئیس', 'Italy': '🇮🇹 ایتالیا',
-            'Spain': '🇪🇸 اسپانیا', 'Israel': '🇮🇱 اسرائیل', 'South Africa': '🇿🇦 آفریقای جنوبی'
+            'Spain': '🇪🇸 اسپانیا', 'Israel': '🇮🇱 اسرائیل', 'South Africa': '🇿🇦 آفریقای جنوبی',
+            'Austria': '🇦🇹 اتریش', 'Belgium': '🇧🇪 بلژیک', 'Czechia': '🇨🇿 جمهوری چک',
+            'Greece': '🇬🇷 یونان', 'Portugal': '🇵🇹 پرتغال', 'Romania': '🇷🇴 رومانی',
+            'Ukraine': '🇺🇦 اوکراین', 'Vietnam': '🇻🇳 ویتنام', 'Malaysia': '🇲🇾 مالزی',
+            'Thailand': '🇹🇭 تایلند', 'Indonesia': '🇮🇩 اندونزی', 'Philippines': '🇵🇭 فیلیپین'
         };
 
+        // دریافت لوکیشن از روی IP
         async function getLocation(host) {
             if (locationCache.has(host)) return locationCache.get(host);
             try {
                 const res = await fetch(`https://ip-api.com/json/${host}?fields=status,country`, { signal: AbortSignal.timeout(3000) });
                 const data = await res.json();
-                if (data.status === 'success') {
-                    let display = countryNames[data.country] || `🌍 ${data.country}`;
-                    let result = { country: data.country, display: display };
-                    locationCache.set(host, result);
-                    return result;
+                let display = '🌍 نامشخص';
+                if (data.status === 'success' && data.country) {
+                    display = countryMap[data.country] || `🌍 ${data.country}`;
                 }
-            } catch(e) {}
-            let result = { country: 'Unknown', display: '🌍 نامشخص' };
-            locationCache.set(host, result);
-            return result;
+                locationCache.set(host, display);
+                return display;
+            } catch(e) {
+                locationCache.set(host, '🌍 نامشخص');
+                return '🌍 نامشخص';
+            }
         }
 
         async function fetchWithTimeout(url, options = {}, timeout = 15000) {
@@ -470,7 +487,7 @@
         }
 
         async function checkAndWakeServer(showModal = true) {
-            if (isFirefox) return false;
+            if (isFirefox) return true;
             if (isWakingUp) return false;
             isWakingUp = true;
             if (showModal) document.getElementById('serverStatusModal').classList.add('active');
@@ -500,7 +517,26 @@
             document.getElementById('serverStatusModal').classList.remove('active');
         }
 
-        // ============ تست خودکار با تست همزمان ============
+        // استخراج اطلاعات از کانفیگ
+        function parseConfig(config) {
+            try {
+                if (config.startsWith('vmess://')) {
+                    let b64 = config.substring(8).split('#')[0];
+                    while (b64.length % 4) b64 += '=';
+                    let obj = JSON.parse(atob(b64));
+                    return { host: obj.add, port: obj.port, name: obj.ps || 'VMess', type: 'vmess' };
+                } else if (config.startsWith('vless://')) {
+                    let match = config.match(/@([^:]+):(\d+)/);
+                    if (match) return { host: match[1], port: match[2], name: 'VLESS', type: 'vless' };
+                } else if (config.startsWith('trojan://')) {
+                    let match = config.match(/@([^:]+):(\d+)/);
+                    if (match) return { host: match[1], port: match[2], name: 'Trojan', type: 'trojan' };
+                }
+            } catch(e) {}
+            return null;
+        }
+
+        // ============ تست خودکار اصلی ============
         async function startAutoTest() {
             if (isFirefox) {
                 alert('⚠️ فایرفاکس محدودیت دارد! از کروم یا اج استفاده کنید.');
@@ -532,7 +568,7 @@
             updateStatus('🔄 در حال دریافت کانفیگ‌ها...');
             addLog('🚀 شروع تست خودکار...', 'verified');
             
-            // دریافت کانفیگ‌ها
+            // دریافت کانفیگ از همه منابع
             let allConfigs = [];
             for (const url of SUB_URLS) {
                 if (!isTesting) break;
@@ -541,7 +577,7 @@
                     if (response.ok) {
                         let content = await response.text();
                         try { content = atob(content); } catch(e) {}
-                        let lines = content.split('\n').filter(l => l.trim() && l.includes('://'));
+                        let lines = content.split('\n').filter(l => l.trim() && (l.includes('vmess://') || l.includes('vless://') || l.includes('trojan://')));
                         lines = lines.filter(line => {
                             if (line.startsWith('vmess://')) return settings.protocols.vmess;
                             if (line.startsWith('vless://')) return settings.protocols.vless;
@@ -549,9 +585,13 @@
                             return false;
                         });
                         allConfigs.push(...lines);
+                        addLog(`📥 ${lines.length} کانفیگ از منبع دریافت شد`, 'info');
                     }
                 } catch(e) {}
-                if (allConfigs.length >= settings.maxConfigs) break;
+                if (allConfigs.length >= settings.maxConfigs) {
+                    allConfigs = allConfigs.slice(0, settings.maxConfigs);
+                    break;
+                }
             }
             
             if (!allConfigs.length) {
@@ -562,34 +602,19 @@
                 return;
             }
             
-            addLog(`🔍 ${allConfigs.length} کانفیگ - شروع تست همزمان`, 'info');
+            addLog(`🔍 ${allConfigs.length} کانفیگ - شروع تست همزمان ۵ تایی`, 'info');
             
             let completed = 0;
             const total = allConfigs.length;
             const results = [];
             
             // تست یک کانفیگ
-            const testOne = async (config) => {
+            const testOne = async (config, index) => {
                 if (!isTesting) return null;
+                const parsed = parseConfig(config);
+                if (!parsed) return null;
                 
-                let host = '', port = '', name = 'Unknown', type = '';
-                try {
-                    if (config.startsWith('vmess://')) {
-                        let b64 = config.substring(8).split('#')[0];
-                        while (b64.length % 4) b64 += '=';
-                        let obj = JSON.parse(atob(b64));
-                        host = obj.add; port = obj.port; name = obj.ps || 'VMess'; type = 'vmess';
-                    } else if (config.startsWith('vless://')) {
-                        let match = config.match(/@([^:]+):(\d+)/);
-                        if (match) { host = match[1]; port = match[2]; name = 'VLESS'; type = 'vless'; }
-                    } else if (config.startsWith('trojan://')) {
-                        let match = config.match(/@([^:]+):(\d+)/);
-                        if (match) { host = match[1]; port = match[2]; name = 'Trojan'; type = 'trojan'; }
-                    }
-                } catch(e) {}
-                
-                if (!host || !port) return null;
-                
+                const { host, port, name, type } = parsed;
                 try {
                     const response = await fetchWithTimeout(`${API_URL}/test-config`, {
                         method: 'POST',
@@ -605,9 +630,9 @@
                     
                     if (result.alive) {
                         const location = await getLocation(host);
-                        addLog(`✅ ${host}:${port} (${type}) | ${result.latency || 0}ms | ${location.display}`, 'success');
+                        addLog(`✅ ${host}:${port} (${type}) | ${result.latency || 0}ms | ${location}`, 'success');
                         return {
-                            latency: result.latency || 0,
+                            latency: result.latency || 999,
                             config: config,
                             host: host,
                             port: port,
@@ -629,27 +654,27 @@
             // تست همزمان ۵ تایی
             for (let i = 0; i < allConfigs.length && isTesting; i += 5) {
                 const batch = allConfigs.slice(i, Math.min(i + 5, allConfigs.length));
-                const batchResults = await Promise.all(batch.map(c => testOne(c)));
+                const batchPromises = batch.map((c, idx) => testOne(c, i + idx));
+                const batchResults = await Promise.all(batchPromises);
                 for (const r of batchResults) {
-                    if (r) results.push(r);
+                    if (r && r.latency !== 999) results.push(r);
                 }
             }
             
             activeConfigs = results;
             activeConfigs.sort((a, b) => a.latency - b.latency);
-            topConfigs = activeConfigs.slice(0, 5);
             
-            // نمایش نتایج در تب اول
+            // نمایش در تب اول
             const resultsList = document.getElementById('resultsList');
             if (activeConfigs.length === 0) {
-                resultsList.innerHTML = '<div class="result-item">❌ هیچ کانفیگی پیدا نشد!</div>';
+                resultsList.innerHTML = '<div class="result-item" style="text-align:center;">❌ هیچ کانفیگ فعالی پیدا نشد!</div>';
             } else {
                 for (let i = 0; i < Math.min(activeConfigs.length, 50); i++) {
                     const c = activeConfigs[i];
                     const medal = i < 5 ? (i === 0 ? '🏆' : i === 1 ? '🥈' : i === 2 ? '🥉' : '📌') : '  ';
                     const div = document.createElement('div');
                     div.className = 'result-item verified';
-                    div.innerHTML = `${medal} ${c.location.display} | ${c.host}:${c.port} (${c.type}) | ${c.latency}ms | ${c.name}`;
+                    div.innerHTML = `${medal} ${c.location} | ${c.host}:${c.port} (${c.type}) | ${c.latency}ms | ${c.name}`;
                     resultsList.appendChild(div);
                 }
             }
@@ -667,16 +692,16 @@
             document.getElementById('autoTestBtn').className = 'btn btn-primary';
         }
         
-        // ============ ساخت QR ============
+        // ============ QR Code ============
         function createQRCode(elementId, text) {
             const container = document.getElementById(elementId);
             if (!container) return;
             container.innerHTML = '';
             try {
                 let qrText = text.length > 2000 ? text.substring(0, 1900) : text;
-                new QRCode(container, { text: qrText, width: 120, height: 120, correctLevel: QRCode.CorrectLevel.L });
+                new QRCode(container, { text: qrText, width: 110, height: 110, correctLevel: QRCode.CorrectLevel.L });
             } catch(e) {
-                container.innerHTML = '<div class="qr-error">❌</div>';
+                container.innerHTML = '<div style="color:#f38ba8;font-size:11px;">❌</div>';
             }
         }
 
@@ -691,47 +716,52 @@
             grid.innerHTML = '';
             
             if (!activeConfigs.length) {
-                grid.innerHTML = '<div style="text-align:center; padding:40px;">⚠️ کانفیگی وجود ندارد</div>';
+                grid.innerHTML = '<div style="text-align:center; padding:40px;">⚠️ کانفیگ فعالی وجود ندارد! لطفاً ابتدا تست خودکار را انجام دهید.</div>';
                 return;
             }
             
-            // گروه‌بندی
-            const groups = {};
+            // گروه‌بندی بر اساس لوکیشن
+            const groups = new Map();
             for (const cfg of activeConfigs) {
-                const key = cfg.location.display;
-                if (!groups[key]) groups[key] = [];
-                groups[key].push(cfg);
+                const loc = cfg.location || '🌍 نامشخص';
+                if (!groups.has(loc)) groups.set(loc, []);
+                groups.get(loc).push(cfg);
             }
             
-            for (const [country, configs] of Object.entries(groups)) {
-                const groupId = 'group-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6);
+            // مرتب‌سازی گروه‌ها بر اساس نام
+            const sortedGroups = Array.from(groups.keys()).sort();
+            
+            for (const country of sortedGroups) {
+                const configs = groups.get(country);
+                const groupId = 'group-' + Date.now() + '-' + Math.random().toString(36).substr(2, 8);
                 const wrapper = document.createElement('div');
                 wrapper.className = 'location-group';
                 wrapper.innerHTML = `
                     <div class="location-header" onclick="toggleGroup('${groupId}')">
                         <span>${country}</span>
                         <span class="count">${configs.length}</span>
-                        <span style="margin-right: auto;">▼</span>
+                        <span class="arrow">▼</span>
                     </div>
                     <div id="${groupId}" class="location-configs"><div class="qr-grid"></div></div>
                 `;
                 const qrContainer = wrapper.querySelector('.qr-grid');
                 for (let i = 0; i < configs.length; i++) {
                     const c = configs[i];
-                    const qrId = 'qr-' + Date.now() + '-' + i + '-' + Math.random().toString(36).substr(2, 4);
+                    const qrId = 'qr-' + Date.now() + '-' + i + '-' + Math.random().toString(36).substr(2, 6);
                     const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`;
+                    const medalColor = i === 0 ? '#f9e2af' : i === 1 ? '#cba6f7' : i === 2 ? '#fab387' : '#89b4fa';
                     const card = document.createElement('div');
                     card.className = 'qr-card';
                     card.innerHTML = `
-                        <h3>${medal} ${escapeHtml(c.name)} (${c.type})</h3>
+                        <h3 style="color: ${medalColor};">${medal} ${escapeHtml(c.name)} (${c.type})</h3>
                         <p>📍 ${c.host}:${c.port}</p>
                         <p>⚡ ${c.latency}ms</p>
                         <div class="qr-code" id="${qrId}"></div>
-                        <button class="btn btn-primary" onclick="copyConfig('${escapeHtml(c.config).replace(/'/g, "\\'")}')">📋 کپی</button>
-                        <p style="font-size:0.6em;">${c.config.substring(0, 45)}...</p>
+                        <button class="btn btn-primary" style="margin-top:8px;" onclick="copyConfig('${escapeHtml(c.config).replace(/'/g, "\\'")}')">📋 کپی کانفیگ</button>
+                        <p style="font-size:0.6em; margin-top:8px; opacity:0.6;">${c.config.substring(0, 40)}...</p>
                     `;
                     qrContainer.appendChild(card);
-                    setTimeout(() => createQRCode(qrId, c.config), 100);
+                    setTimeout(() => createQRCode(qrId, c.config), 50);
                 }
                 grid.appendChild(wrapper);
             }
@@ -741,7 +771,7 @@
             const el = document.getElementById(groupId);
             if (el) {
                 el.classList.toggle('collapsed');
-                const arrow = el.parentElement.querySelector('.location-header span:last-child');
+                const arrow = el.parentElement.querySelector('.arrow');
                 if (arrow) arrow.innerHTML = el.classList.contains('collapsed') ? '▶' : '▼';
             }
         }
@@ -752,26 +782,19 @@
             if (!inputText) { alert('لطفاً کانفیگ وارد کنید!'); return; }
             
             const resultDiv = document.getElementById('manualResult');
-            let configsToTest = inputText.split('\n').filter(l => l.trim() && l.includes('://'));
+            let lines = inputText.split('\n').filter(l => l.trim() && l.includes('://'));
             resultDiv.innerHTML = '';
             let liveCount = 0;
             
-            for (let i = 0; i < configsToTest.length; i++) {
-                const config = configsToTest[i];
-                let host = '', port = '', name = '';
-                try {
-                    if (config.startsWith('vmess://')) {
-                        let b64 = config.substring(8).split('#')[0];
-                        while (b64.length % 4) b64 += '=';
-                        let obj = JSON.parse(atob(b64));
-                        host = obj.add; port = obj.port; name = obj.ps || 'VMess';
-                    } else if (config.startsWith('vless://') || config.startsWith('trojan://')) {
-                        let match = config.match(/@([^:]+):(\d+)/);
-                        if (match) { host = match[1]; port = match[2]; name = config.split('#')[1] || 'Config'; }
-                    }
-                } catch(e) {}
+            for (let i = 0; i < lines.length; i++) {
+                const config = lines[i];
+                const parsed = parseConfig(config);
                 
-                if (host && port) {
+                if (parsed) {
+                    const { host, port, name, type } = parsed;
+                    resultDiv.innerHTML += `<div class="result-item">🔄 تست ${i+1}/${lines.length}: ${host}:${port} (${type})...</div>`;
+                    resultDiv.scrollTop = resultDiv.scrollHeight;
+                    
                     try {
                         const response = await fetchWithTimeout(`${API_URL}/test-config`, {
                             method: 'POST',
@@ -780,38 +803,47 @@
                         }, 15000);
                         const result = await response.json();
                         const location = await getLocation(host);
+                        
                         if (result.alive) {
                             liveCount++;
-                            resultDiv.innerHTML += `<div class="result-item verified">${location.display} ✅ ${host}:${port} | ${result.latency || '?'}ms | ${name}</div>`;
+                            const lastDiv = resultDiv.lastChild;
+                            if (lastDiv) lastDiv.outerHTML = `<div class="result-item verified">✅ ${location} | ${host}:${port} (${type}) | ${result.latency || '?'}ms | ${name}</div>`;
                         } else {
-                            resultDiv.innerHTML += `<div class="result-item dead">${location.display} ❌ ${host}:${port} | مرده</div>`;
+                            const lastDiv = resultDiv.lastChild;
+                            if (lastDiv) lastDiv.outerHTML = `<div class="result-item dead">❌ ${location} | ${host}:${port} (${type}) | مرده</div>`;
                         }
                     } catch(e) {
-                        resultDiv.innerHTML += `<div class="result-item dead">❌ ${host}:${port} | خطا</div>`;
+                        const lastDiv = resultDiv.lastChild;
+                        if (lastDiv) lastDiv.outerHTML = `<div class="result-item dead">❌ ${host}:${port} | خطا</div>`;
                     }
                 } else {
-                    resultDiv.innerHTML += `<div class="result-item dead">❌ فرمت نامعتبر</div>`;
+                    resultDiv.innerHTML += `<div class="result-item dead">❌ فرمت نامعتبر: ${config.substring(0, 50)}...</div>`;
                 }
+                resultDiv.scrollTop = resultDiv.scrollHeight;
             }
-            resultDiv.innerHTML += `<div class="result-item verified" style="text-align:center;">📊 ${liveCount}/${configsToTest.length} کانفیگ فعال</div>`;
+            resultDiv.innerHTML += `<div class="result-item verified" style="text-align:center; margin-top:10px;">📊 خلاصه: ${liveCount} کانفیگ فعال از ${lines.length}</div>`;
         }
 
         function copyConfig(config) {
             navigator.clipboard.writeText(config);
-            alert('✅ کپی شد!');
+            alert('✅ کانفیگ کپی شد!');
         }
         
         function saveConfigs() {
-            if (!activeConfigs.length) { alert('هیچ کانفیگی ندارد!'); return; }
-            let text = `# V2Ray Configs\n# تاریخ: ${new Date().toLocaleString()}\n# تعداد: ${activeConfigs.length}\n\n`;
-            activeConfigs.forEach((c, i) => {
-                text += `# ${i+1}. ${c.location.display} | ${c.host}:${c.port} (${c.type}) - ${c.latency}ms\n${c.config}\n\n`;
-            });
+            if (!activeConfigs.length) { alert('هیچ کانفیگی برای ذخیره وجود ندارد!'); return; }
+            let text = `# V2Ray Configs - کانفیگ‌های فعال\n# تاریخ: ${new Date().toLocaleString()}\n# تعداد: ${activeConfigs.length}\n\n`;
+            for (let i = 0; i < activeConfigs.length; i++) {
+                const c = activeConfigs[i];
+                text += `# ${i+1}. ${c.location} | ${c.host}:${c.port} (${c.type}) - ${c.latency}ms - ${c.name}\n${c.config}\n\n`;
+            }
             const blob = new Blob([text], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = `v2ray_verified_${new Date().toISOString().slice(0,19)}.txt`;
+            a.href = url;
+            a.download = `v2ray_configs_${new Date().toISOString().slice(0,19)}.txt`;
             a.click();
+            URL.revokeObjectURL(url);
+            updateStatus('💾 کانفیگ‌ها ذخیره شدند');
         }
         
         function clearManual() {
@@ -869,10 +901,12 @@
         function openSettings() { document.getElementById('settingsModal').classList.add('active'); }
         function closeSettings() { document.getElementById('settingsModal').classList.remove('active'); }
         
+        // اتصال دکمه‌ها
         document.getElementById('autoTestBtn').onclick = startAutoTest;
         loadSettings();
         if (!isFirefox) setTimeout(() => checkAndWakeServer(false), 1000);
         
+        // توابع گلوبال برای onclick
         window.toggleGroup = toggleGroup;
         window.copyConfig = copyConfig;
         window.switchTab = switchTab;
