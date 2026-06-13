@@ -36,6 +36,7 @@
             font-weight: bold;
             margin-top: 8px;
         }
+        /* هشدار فایرفاکس */
         .firefox-warning {
             background: #f38ba8;
             color: #1e1e2e;
@@ -43,8 +44,12 @@
             border-radius: 12px;
             margin-bottom: 20px;
             text-align: center;
-            display: none;
+            border-right: 4px solid #1e1e2e;
         }
+        .firefox-warning .warning-icon { font-size: 24px; margin-bottom: 8px; }
+        .firefox-warning .warning-title { font-weight: bold; margin-bottom: 8px; font-size: 1.1em; }
+        .firefox-warning .warning-text { font-size: 0.85em; margin-bottom: 10px; }
+        .firefox-warning .suggestion { font-size: 0.9em; font-weight: bold; }
         .settings-btn {
             position: fixed;
             bottom: 20px;
@@ -168,7 +173,6 @@
         .btn-success { background: #a6e3a1; color: #1e1e2e; }
         .btn-danger { background: #f38ba8; color: #1e1e2e; }
         .btn-warning { background: #fab387; color: #1e1e2e; }
-        .btn-sm { padding: 6px 12px; font-size: 0.8em; }
         .btn:hover { transform: translateY(-2px); filter: brightness(1.05); }
         .progress-bar { width: 100%; height: 8px; background: #45475a; border-radius: 10px; overflow: hidden; margin: 15px 0; }
         .progress-fill { width: 0%; height: 100%; background: linear-gradient(90deg, #89b4fa, #74c7ec); transition: width 0.3s ease; }
@@ -184,47 +188,6 @@
         }
         .result-item.verified { border-right: 4px solid #a6e3a1; background: #313244; }
         .result-item.dead { opacity: 0.5; text-decoration: line-through; }
-        
-        /* استایل دسته‌بندی لوکیشن */
-        .location-group {
-            margin-bottom: 20px;
-            background: #1e1e2e;
-            border-radius: 16px;
-            overflow: hidden;
-            border: 1px solid #313244;
-        }
-        .location-header {
-            background: #313244;
-            padding: 12px 20px;
-            font-weight: bold;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-        .location-header:hover { background: #45475a; }
-        .location-header .count {
-            background: #89b4fa;
-            color: #1e1e2e;
-            padding: 2px 10px;
-            border-radius: 20px;
-            font-size: 0.75em;
-        }
-        .location-header .arrow { margin-right: auto; font-size: 1.2em; }
-        .location-header .save-location-btn {
-            background: #a6e3a1;
-            color: #1e1e2e;
-            border: none;
-            padding: 5px 12px;
-            border-radius: 12px;
-            font-size: 0.7em;
-            cursor: pointer;
-        }
-        .location-header .save-location-btn:hover { background: #89b4fa; transform: scale(1.02); }
-        .location-configs { display: block; padding: 15px; }
-        .location-configs.collapsed { display: none; }
-        
         .qr-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 20px; }
         .qr-card { background: #1e1e2e; border-radius: 16px; padding: 15px; text-align: center; }
         .qr-code { background: white; padding: 10px; border-radius: 12px; display: inline-block; margin: 10px 0; min-height: 120px; }
@@ -277,7 +240,6 @@
             .tab-btn { padding: 10px; font-size: 0.85em; }
             .qr-grid { grid-template-columns: 1fr; }
             .settings-btn { bottom: 15px; right: 15px; width: 50px; height: 50px; font-size: 24px; }
-            .location-header { flex-wrap: wrap; }
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
@@ -286,23 +248,23 @@
     <div class="container">
         <div class="header">
             <h1>🚀 V2Ray Config Checker Pro</h1>
-            <p>نسخه Real Test | تست واقعی + تشخیص لوکیشن + دسته‌بندی جغرافیایی</p>
-            <span class="badge">✓ تست واقعی | ✓ تشخیص لوکیشن | ✓ دسته‌بندی کشور | ✓ 10 کانفیگ برتر</span>
+            <p>نسخه Real Test | تست واقعی از طریق سرور واسط + تنظیمات پیشرفته</p>
+            <span class="badge">✓ تست واقعی | ✓ 100% تضمینی | ✓ بدون خطای -1</span>
             <div id="serverStatus" class="server-status waking">🟡 در حال بررسی سرور...</div>
         </div>
 
-        <div id="firefoxWarning" class="firefox-warning">
+        <!-- هشدار فایرفاکس - فقط برای کاربران فایرفاکس نمایش داده می‌شود -->
+        <div id="firefoxWarning" class="firefox-warning" style="display: none;">
             <div class="warning-icon">⚠️</div>
             <div class="warning-title">توجه: مشکل سازگاری با مرورگر فایرفاکس</div>
             <div class="warning-text">مرورگر فایرفاکس به دلیل محدودیت‌های امنیتی، نمی‌تواند به درستی با سرور تست واقعی ارتباط برقرار کند.</div>
-            <div class="suggestion">✅ پیشنهاد: لطفاً از مرورگر Google Chrome یا Microsoft Edge استفاده کنید.</div>
+            <div class="suggestion">✅ پیشنهاد: لطفاً از مرورگر <span style="color: #1e1e2e;">Google Chrome</span> یا <span style="color: #1e1e2e;">Microsoft Edge</span> استفاده کنید.</div>
         </div>
 
         <div class="tabs">
             <button class="tab-btn active" onclick="switchTab('auto')">🤖 تست خودکار</button>
             <button class="tab-btn" onclick="switchTab('manual')">🔧 تست دستی</button>
-            <button class="tab-btn" onclick="switchTab('location')">🗺️ دسته‌بندی لوکیشن</button>
-            <button class="tab-btn" onclick="switchTab('top10')">🏆 10 کانفیگ برتر</button>
+            <button class="tab-btn" onclick="switchTab('top')">🏆 کانفیگ‌های تضمینی</button>
         </div>
 
         <!-- تب تست خودکار -->
@@ -343,23 +305,13 @@
             </div>
         </div>
 
-        <!-- تب دسته‌بندی لوکیشن -->
-        <div id="locationTab" class="tab-content">
+        <!-- تب 5 کانفیگ برتر -->
+        <div id="topTab" class="tab-content">
             <div class="card">
-                <h3>🗺️ دسته‌بندی کانفیگ‌ها بر اساس لوکیشن</h3>
-                <p style="margin: 10px 0; color: #89b4fa;">✅ کانفیگ‌های فعال بر اساس کشور دسته‌بندی شده‌اند (کلیک روی هر دسته برای باز/بسته شدن)</p>
-                <button class="btn btn-success" onclick="refreshLocationGroups()">🔄 به‌روزرسانی</button>
-                <div id="locationGrid" class="qr-grid"></div>
-            </div>
-        </div>
-
-        <!-- تب 10 کانفیگ برتر -->
-        <div id="top10Tab" class="tab-content">
-            <div class="card">
-                <h3>🏆 10 کانفیگ برتر با کمترین تاخیر</h3>
-                <p style="margin: 10px 0; color: #f9e2af;">✅ بهترین کانفیگ‌ها بر اساس کمترین زمان پاسخ (Latency)</p>
-                <button class="btn btn-success" onclick="refreshTop10()">🔄 به‌روزرسانی</button>
-                <div id="top10Grid" class="qr-grid"></div>
+                <h3>🏆 بهترین کانفیگ‌های ۱۰۰٪ تضمینی</h3>
+                <p style="margin: 10px 0;">کانفیگ‌هایی که تست واقعی را با موفقیت پشت سر گذاشته‌اند</p>
+                <button class="btn btn-success" onclick="refreshTopConfigs()">🔄 به‌روزرسانی</button>
+                <div id="topGrid" class="qr-grid"></div>
             </div>
         </div>
 
@@ -383,7 +335,7 @@
                 <h3>📡 پروتکل‌های مجاز (فقط برای تست خودکار)</h3>
                 <div class="checkbox-group">
                     <label><input type="checkbox" id="protoVmess" checked> VMess</label>
-                    <label><input type="checkbox" id="protoVless" checked> VLESS</label>
+                    <label><input type="checkbox" id="ProtoVless" checked> VLESS</label>
                     <label><input type="checkbox" id="protoTrojan" checked> Trojan</label>
                 </div>
                 <p class="info-text">⚠️ این تنظیمات فقط روی تب "تست خودکار" تأثیر دارد</p>
@@ -439,7 +391,6 @@
         let topConfigs = [];
         let isTesting = false;
         let isWakingUp = false;
-        let locationCache = new Map();
         
         let settings = {
             protocols: { vmess: true, vless: true, trojan: true },
@@ -458,121 +409,15 @@
             "https://raw.githubusercontent.com/barry-far/V2ray-config/main/Sub8.txt"
         ];
 
-        // دیکشنری لوکیشن با پرچم (گسترده شده برای تشخیص بهتر)
-        const countryFlags = {
-            'United States': '🇺🇸', 'US': '🇺🇸', 'USA': '🇺🇸', 'America': '🇺🇸',
-            'Germany': '🇩🇪', 'DE': '🇩🇪',
-            'Netherlands': '🇳🇱', 'NL': '🇳🇱',
-            'France': '🇫🇷', 'FR': '🇫🇷',
-            'United Kingdom': '🇬🇧', 'UK': '🇬🇧', 'GB': '🇬🇧', 'England': '🇬🇧',
-            'Canada': '🇨🇦', 'CA': '🇨🇦',
-            'Japan': '🇯🇵', 'JP': '🇯🇵',
-            'Singapore': '🇸🇬', 'SG': '🇸🇬',
-            'Russia': '🇷🇺', 'RU': '🇷🇺',
-            'India': '🇮🇳', 'IN': '🇮🇳',
-            'Australia': '🇦🇺', 'AU': '🇦🇺',
-            'Finland': '🇫🇮', 'FI': '🇫🇮',
-            'Sweden': '🇸🇪', 'SE': '🇸🇪',
-            'Norway': '🇳🇴', 'NO': '🇳🇴',
-            'Denmark': '🇩🇰', 'DK': '🇩🇰',
-            'Poland': '🇵🇱', 'PL': '🇵🇱',
-            'Turkey': '🇹🇷', 'TR': '🇹🇷',
-            'Iran': '🇮🇷', 'IR': '🇮🇷',
-            'UAE': '🇦🇪', 'AE': '🇦🇪',
-            'Hong Kong': '🇭🇰', 'HK': '🇭🇰',
-            'South Korea': '🇰🇷', 'KR': '🇰🇷',
-            'Brazil': '🇧🇷', 'BR': '🇧🇷',
-            'Switzerland': '🇨🇭', 'CH': '🇨🇭',
-            'Italy': '🇮🇹', 'IT': '🇮🇹',
-            'Spain': '🇪🇸', 'ES': '🇪🇸',
-            'Israel': '🇮🇱', 'IL': '🇮🇱',
-            'South Africa': '🇿🇦', 'ZA': '🇿🇦'
-        };
-
-        const persianNames = {
-            'United States': 'آمریکا', 'Germany': 'آلمان', 'Netherlands': 'هلند',
-            'France': 'فرانسه', 'United Kingdom': 'انگلستان', 'Canada': 'کانادا',
-            'Japan': 'ژاپن', 'Singapore': 'سنگاپور', 'Russia': 'روسیه',
-            'India': 'هند', 'Australia': 'استرالیا', 'Finland': 'فنلاند',
-            'Sweden': 'سوئد', 'Norway': 'نروژ', 'Denmark': 'دانمارک',
-            'Poland': 'لهستان', 'Turkey': 'ترکیه', 'Iran': 'ایران',
-            'UAE': 'امارات', 'Hong Kong': 'هنگ‌کنگ', 'South Korea': 'کره جنوبی',
-            'Brazil': 'برزیل', 'Switzerland': 'سوئیس', 'Italy': 'ایتالیا',
-            'Spain': 'اسپانیا', 'Israel': 'اسرائیل', 'South Africa': 'آفریقای جنوبی'
-        };
-
-        function getLocationDisplay(country) {
-            if (!country) return '🌍 نامشخص';
-            const flag = countryFlags[country] || '🌍';
-            const persian = persianNames[country] || country;
-            return `${flag} ${persian}`;
-        }
-
-        // دریافت لوکیشن از IP با چندین API پشتیبان
-        async function getLocationForHost(host) {
-            if (locationCache.has(host)) return locationCache.get(host);
-            
-            // لیست API های پشتیبان
-            const apis = [
-                async () => {
-                    const res = await fetch(`https://ipapi.co/${host}/country/`, { signal: AbortSignal.timeout(3000) });
-                    const country = await res.text();
-                    if (country && country.length > 2 && country !== 'None') return country;
-                    return null;
-                },
-                async () => {
-                    const res = await fetch(`https://ipwhois.app/json/${host}?fields=country`, { signal: AbortSignal.timeout(3000) });
-                    const data = await res.json();
-                    if (data.country) return data.country;
-                    return null;
-                },
-                async () => {
-                    const res = await fetch(`https://freeipapi.com/api/json/${host}`, { signal: AbortSignal.timeout(3000) });
-                    const data = await res.json();
-                    if (data.countryName) return data.countryName;
-                    return null;
-                }
-            ];
-            
-            for (const api of apis) {
-                try {
-                    const country = await api();
-                    if (country) {
-                        const display = getLocationDisplay(country);
-                        locationCache.set(host, display);
-                        return display;
-                    }
-                } catch(e) { continue; }
-            }
-            
-            // Fallback: حدس بر اساس پسوند دامنه و نام
-            let guess = '🌍 نامشخص';
-            const h = host.toLowerCase();
-            if (h.includes('.ir') || h.includes('iran')) guess = '🇮🇷 ایران';
-            else if (h.includes('.us') || h.includes('usa') || h.includes('unitedstates')) guess = '🇺🇸 آمریکا';
-            else if (h.includes('.de') || h.includes('germany') || h.includes('frankfurt')) guess = '🇩🇪 آلمان';
-            else if (h.includes('.nl') || h.includes('netherlands') || h.includes('amsterdam')) guess = '🇳🇱 هلند';
-            else if (h.includes('.fr') || h.includes('france') || h.includes('paris')) guess = '🇫🇷 فرانسه';
-            else if (h.includes('.uk') || h.includes('.gb') || h.includes('london')) guess = '🇬🇧 انگلستان';
-            else if (h.includes('.ca') || h.includes('canada')) guess = '🇨🇦 کانادا';
-            else if (h.includes('.jp') || h.includes('japan') || h.includes('tokyo')) guess = '🇯🇵 ژاپن';
-            else if (h.includes('.sg') || h.includes('singapore')) guess = '🇸🇬 سنگاپور';
-            else if (h.includes('.ru') || h.includes('russia') || h.includes('moscow')) guess = '🇷🇺 روسیه';
-            else if (h.includes('.tr') || h.includes('turkey') || h.includes('istanbul')) guess = '🇹🇷 ترکیه';
-            else if (h.includes('cloudflare')) guess = '☁️ کلودفلر';
-            else if (h.includes('amazon') || h.includes('aws')) guess = '☁️ آمازون';
-            else if (h.includes('google') || h.includes('gcp')) guess = '🔵 گوگل';
-            
-            locationCache.set(host, guess);
-            return guess;
-        }
-
-        // تشخیص مرورگر فایرفاکس
+        // تشخیص مرورگر فایرفاکس و نمایش هشدار
         const isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
         
         if (isFirefox) {
             const warningDiv = document.getElementById('firefoxWarning');
-            if (warningDiv) warningDiv.style.display = 'block';
+            if (warningDiv) {
+                warningDiv.style.display = 'block';
+            }
+            // تغییر وضعیت سرور در هدر
             const statusDiv = document.getElementById('serverStatus');
             if (statusDiv) {
                 statusDiv.innerHTML = '⚠️ فایرفاکس - ممکن است با مشکل مواجه شود';
@@ -620,6 +465,7 @@
         // ==================== وضعیت سرور ====================
         async function checkAndWakeServer(showModal = true) {
             if (isFirefox) {
+                // در فایرفاکس، وضعیت را بدون چک کردن واقعی سبز کن
                 const statusDiv = document.getElementById('serverStatus');
                 if (statusDiv) {
                     statusDiv.innerHTML = '⚠️ تست در فایرفاکس محدودیت دارد';
@@ -748,7 +594,6 @@
             document.getElementById('resultsList').innerHTML = '';
             document.getElementById('logList').innerHTML = '';
             activeConfigs = [];
-            locationCache.clear();
             
             updateStatus('🔄 در حال دریافت و تست کانفیگ‌ها...');
             addLog('🚀 شروع تست خودکار...', 'verified');
@@ -842,9 +687,8 @@
                         
                         if (result.alive) {
                             const latency = result.latency || 0;
-                            const location = await getLocationForHost(host);
-                            activeConfigs.push({ latency, config, host, port, name, type, location });
-                            addLog(`✅ تأیید شد: ${host}:${port} (${type}) | ${latency}ms | ${location}`, 'verified');
+                            activeConfigs.push({ latency, config, host, port, name, type });
+                            addLog(`✅ تأیید شد: ${host}:${port} (${type}) | ${latency}ms`, 'verified');
                         } else {
                             addLog(`❌ رد شد: ${host}:${port} (${type}) | دلیل: ${result.message || 'نامشخص'}`, 'warning');
                         }
@@ -859,7 +703,7 @@
             }
             
             activeConfigs.sort((a, b) => a.latency - b.latency);
-            topConfigs = activeConfigs.slice(0, 10);
+            topConfigs = activeConfigs.slice(0, 5);
             
             const resultsList = document.getElementById('resultsList');
             if (activeConfigs.length === 0) {
@@ -871,7 +715,7 @@
                     const medal = i < 5 ? (i === 0 ? '🏆 ' : i === 1 ? '🥈 ' : i === 2 ? '🥉 ' : '📌 ') : '   ';
                     const resultDiv = document.createElement('div');
                     resultDiv.className = 'result-item verified';
-                    resultDiv.innerHTML = `${medal} ${c.location} | ${c.host}:${c.port} (${c.type}) | ${latencyDisplay} | ${c.name}`;
+                    resultDiv.innerHTML = `${medal} ✅ ${c.host}:${c.port} (${c.type}) | ${latencyDisplay} | ${c.name}`;
                     resultsList.appendChild(resultDiv);
                 }
             }
@@ -882,8 +726,7 @@
             
             if (activeConfigs.length) {
                 document.getElementById('saveBtn').disabled = false;
-                refreshLocationGroups();
-                refreshTop10();
+                refreshTopConfigs();
             }
             
             isTesting = false;
@@ -979,16 +822,15 @@
                             body: JSON.stringify({ config: config, timeout: 10 })
                         }, 15000);
                         const result = await response.json();
-                        const location = await getLocationForHost(host);
                         
                         if (result.alive) {
                             liveCount++;
                             const latencyDisplay = (result.latency === -1) ? 'نامشخص' : `${result.latency}ms`;
                             resultDiv.innerHTML = resultDiv.innerHTML.replace(`🔄 تست ${i+1}/${configsToTest.length}: ${host}:${port} (${type})...`, 
-                                `✅ تأیید شد: ${location} | ${host}:${port} (${type}) | ${latencyDisplay} | ${name}`);
+                                `✅ تأیید شد: ${host}:${port} (${type}) | ${latencyDisplay} | ${name}`);
                         } else {
                             resultDiv.innerHTML = resultDiv.innerHTML.replace(`🔄 تست ${i+1}/${configsToTest.length}: ${host}:${port} (${type})...`, 
-                                `❌ رد شد: ${location} | ${host}:${port} (${type}) | دلیل: ${result.message || 'نامشخص'}`);
+                                `❌ رد شد: ${host}:${port} (${type}) | دلیل: ${result.message || 'نامشخص'}`);
                         }
                     } catch(e) {
                         resultDiv.innerHTML = resultDiv.innerHTML.replace(`🔄 تست ${i+1}/${configsToTest.length}: ${host}:${port} (${type})...`, 
@@ -1003,169 +845,114 @@
             resultDiv.innerHTML += `<div class="result-item verified" style="margin-top:15px; text-align:center;">📊 خلاصه: ${liveCount} کانفیگ ۱۰۰٪ تضمینی از ${configsToTest.length}</div>`;
             updateStatus(`✅ تست دستی کامل شد - ${liveCount} کانفیگ تأیید شده`);
         }
-
-        // ==================== توابع QR Code ====================
-        function createQRCode(elementId, text) {
-            const container = document.getElementById(elementId);
-            if (!container) return false;
-            container.innerHTML = '';
-            try {
-                let qrText = text.length > 2000 ? text.substring(0, 1900) : text;
-                new QRCode(container, {
-                    text: qrText,
-                    width: 120,
-                    height: 120,
-                    colorDark: "#000000",
-                    colorLight: "#ffffff",
-                    correctLevel: QRCode.CorrectLevel.L
-                });
-                return true;
-            } catch(e) {
-                container.innerHTML = '<div class="qr-error">❌ QR<br>ساخته نشد</div>';
-                return false;
-            }
-        }
-
-        function escapeHtml(str) {
-            if (!str) return '';
-            return str.replace(/[&<>]/g, function(m) {
-                if (m === '&') return '&amp;';
-                if (m === '<') return '&lt;';
-                if (m === '>') return '&gt;';
-                return m;
-            });
-        }
-
-        // ==================== ذخیره کانفیگ‌های یک دسته ====================
-        function saveLocationConfigs(location, configs) {
-            if (!configs.length) {
-                alert('هیچ کانفیگی در این دسته وجود ندارد!');
-                return;
-            }
-            
-            let text = `# V2Ray Configs - کانفیگ‌های ${location}\n`;
-            text += `# تاریخ: ${new Date().toLocaleString()}\n`;
-            text += `# تعداد: ${configs.length}\n\n`;
-            
-            configs.forEach((c, i) => {
-                const latencyDisplay = (c.latency === 999 || c.latency === -1) ? 'نامشخص' : `${c.latency}ms`;
-                text += `# ${i+1}. ${c.host}:${c.port} (${c.type}) - ${latencyDisplay} - ${c.name}\n${c.config}\n\n`;
-            });
-            
-            const blob = new Blob([text], { type: 'text/plain' });
-            const a = document.createElement('a');
-            const safeName = location.replace(/[^a-zA-Z0-9\u0600-\u06FF]/g, '_');
-            a.download = `v2ray_${safeName}_${new Date().toISOString().slice(0,19)}.txt`;
-            a.href = URL.createObjectURL(blob);
-            a.click();
-            URL.revokeObjectURL(a.href);
-            
-            updateStatus(`💾 ${configs.length} کانفیگ از ${location} ذخیره شد`);
-        }
-
-        // ==================== دسته‌بندی لوکیشن با دکمه ذخیره ====================
-        function refreshLocationGroups() {
-            const grid = document.getElementById('locationGrid');
-            if (!grid) return;
-            grid.innerHTML = '';
-            
-            if (!activeConfigs.length) {
-                grid.innerHTML = '<div style="text-align:center; padding:40px;">⚠️ هنوز کانفیگ ۱۰۰٪ تضمینی وجود ندارد! لطفاً ابتدا تست واقعی را انجام دهید.</div>';
-                return;
-            }
-            
-            // گروه‌بندی بر اساس لوکیشن
-            const groups = new Map();
-            for (const cfg of activeConfigs) {
-                const loc = cfg.location || '🌍 نامشخص';
-                if (!groups.has(loc)) groups.set(loc, []);
-                groups.get(loc).push(cfg);
-            }
-            
-            // مرتب‌سازی گروه‌ها
-            const sortedGroups = Array.from(groups.keys()).sort();
-            
-            for (const location of sortedGroups) {
-                const configs = groups.get(location);
-                const groupId = `loc-group-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
-                
-                const wrapper = document.createElement('div');
-                wrapper.className = 'location-group';
-                wrapper.innerHTML = `
-                    <div class="location-header" onclick="toggleLocationGroup('${groupId}')">
-                        <span>${location}</span>
-                        <span class="count">${configs.length} کانفیگ</span>
-                        <span class="arrow">▼</span>
-                        <button class="save-location-btn" onclick="event.stopPropagation(); saveLocationConfigs('${location.replace(/'/g, "\\'")}', ${JSON.stringify(configs).replace(/'/g, "\\'")})">💾 ذخیره این دسته</button>
-                    </div>
-                    <div id="${groupId}" class="location-configs"><div class="qr-grid"></div></div>
-                `;
-                
-                const qrContainer = wrapper.querySelector('.qr-grid');
-                for (let i = 0; i < configs.length; i++) {
-                    const c = configs[i];
-                    const qrId = `loc-qr-${Date.now()}-${i}-${Math.random().toString(36).substr(2, 4)}`;
-                    const latencyDisplay = (c.latency === 999 || c.latency === -1) ? 'نامشخص' : `${c.latency}ms`;
-                    const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`;
-                    const medalColor = i === 0 ? '#f9e2af' : i === 1 ? '#cba6f7' : i === 2 ? '#fab387' : '#89b4fa';
-                    
-                    const card = document.createElement('div');
-                    card.className = 'qr-card';
-                    card.innerHTML = `
-                        <h3 style="color: ${medalColor};">${medal} ${escapeHtml(c.name)} (${c.type})</h3>
-                        <p>📍 ${c.host}:${c.port}</p>
-                        <p>⚡ تاخیر: ${latencyDisplay}</p>
-                        <p>🗺️ ${c.location}</p>
-                        <div class="qr-code" id="${qrId}"></div>
-                        <button class="btn btn-primary" onclick="copyConfig('${escapeHtml(c.config).replace(/'/g, "\\'")}')">📋 کپی کانفیگ</button>
-                        <p style="font-size:0.65em; margin-top:10px; word-break:break-all; color:#a6adc8;">${c.config.substring(0, 55)}...</p>
-                    `;
-                    qrContainer.appendChild(card);
-                    setTimeout(() => createQRCode(qrId, c.config), 100);
-                }
-                grid.appendChild(wrapper);
-            }
+// ==================== تابع اصلاح شده ساخت QR Code ====================
+function createQRCode(elementId, text) {
+    const container = document.getElementById(elementId);
+    if (!container) {
+        console.error('عنصر یافت نشد:', elementId);
+        return false;
+    }
+    
+    container.innerHTML = '';
+    
+    try {
+        let qrText = text;
+        // محدود کردن طول متن برای QR
+        if (qrText.length > 2000) {
+            qrText = qrText.substring(0, 1900);
         }
         
-        function toggleLocationGroup(groupId) {
-            const el = document.getElementById(groupId);
-            if (el) {
-                el.classList.toggle('collapsed');
-                const arrow = el.parentElement.querySelector('.arrow');
-                if (arrow) arrow.innerHTML = el.classList.contains('collapsed') ? '▶' : '▼';
-            }
-        }
+        // ساخت QR Code با تنظیمات بهینه
+        new QRCode(container, {
+            text: qrText,
+            width: 120,
+            height: 120,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.L  // سطح L برای پشتیبانی از متن بیشتر
+        });
+        return true;
+    } catch(e) {
+        console.error('خطا در ساخت QR:', e);
+        container.innerHTML = '<div class="qr-error">❌ QR<br>ساخته نشد</div>';
+        return false;
+    }
+}
 
-        // ==================== 10 کانفیگ برتر ====================
-        function refreshTop10() {
-            const grid = document.getElementById('top10Grid');
-            if (!grid) return;
+// ==================== تابع اصلاح شده refreshTopConfigs ====================
+function refreshTopConfigs() {
+    const grid = document.getElementById('topGrid');
+    grid.innerHTML = '';
+    
+    if (!topConfigs.length) {
+        grid.innerHTML = '<div style="text-align:center; padding:40px;">⚠️ هنوز کانفیگ ۱۰۰٪ تضمینی وجود ندارد! لطفاً ابتدا تست واقعی را انجام دهید.</div>';
+        return;
+    }
+
+    for (let i = 0; i < topConfigs.length; i++) {
+        const c = topConfigs[i];
+        const rank = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`;
+        const rankColor = i === 0 ? '#f9e2af' : '#89b4fa';
+        const latencyDisplay = (c.latency === 999 || c.latency === -1) ? 'نامشخص' : `${c.latency}ms`;
+        
+        // ایجاد ID یکتا برای هر QR
+        const qrId = `qr-${i}-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+        
+        const card = document.createElement('div');
+        card.className = 'qr-card';
+        card.innerHTML = `
+            <h3 style="color: ${rankColor};">${rank} ${escapeHtml(c.name)} (${c.type})</h3>
+            <p>📍 ${c.host}:${c.port}</p>
+            <p>⚡ تاخیر: ${latencyDisplay}</p>
+            <div class="qr-code" id="${qrId}"></div>
+            <button class="btn btn-primary" onclick="copyConfig('${escapeHtml(c.config).replace(/'/g, "\\'")}')">📋 کپی کانفیگ</button>
+            <p style="font-size:0.65em; margin-top:10px; word-break:break-all; color:#a6adc8;">${c.config.substring(0, 55)}...</p>
+        `;
+        grid.appendChild(card);
+        
+        // تاخیر برای اطمینان از ایجاد DOM و سپس ساخت QR
+        setTimeout(() => {
+            createQRCode(qrId, c.config);
+        }, 150);
+    }
+}
+
+// تابع escape برای جلوگیری از خطا در کاراکترهای خاص
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, function(m) {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        return m;
+    }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
+        return c;
+    });
+}
+        function refreshTopConfigs() {
+            const grid = document.getElementById('topGrid');
             grid.innerHTML = '';
             
-            if (!activeConfigs.length) {
+            if (!topConfigs.length) {
                 grid.innerHTML = '<div style="text-align:center; padding:40px;">⚠️ هنوز کانفیگ ۱۰۰٪ تضمینی وجود ندارد! لطفاً ابتدا تست واقعی را انجام دهید.</div>';
                 return;
             }
-            
-            const top10 = activeConfigs.slice(0, 10);
-            
-            for (let i = 0; i < top10.length; i++) {
-                const c = top10[i];
-                const qrId = `top10-qr-${Date.now()}-${i}-${Math.random().toString(36).substr(2, 4)}`;
+
+            for (let i = 0; i < topConfigs.length; i++) {
+                const c = topConfigs[i];
+                const rank = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`;
+                const rankColor = i === 0 ? '#f9e2af' : '#89b4fa';
                 const latencyDisplay = (c.latency === 999 || c.latency === -1) ? 'نامشخص' : `${c.latency}ms`;
-                const rank = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}️⃣`;
-                const rankColor = i === 0 ? '#f9e2af' : i === 1 ? '#cba6f7' : i === 2 ? '#fab387' : '#89b4fa';
-                
+                const qrId = `qr-${i}-${Date.now()}`;
                 const card = document.createElement('div');
                 card.className = 'qr-card';
                 card.innerHTML = `
-                    <h3 style="color: ${rankColor};">${rank} ${escapeHtml(c.name)} (${c.type})</h3>
+                    <h3 style="color: ${rankColor};">${rank} ${c.name} (${c.type})</h3>
                     <p>📍 ${c.host}:${c.port}</p>
                     <p>⚡ تاخیر: ${latencyDisplay}</p>
-                    <p>🗺️ ${c.location || '🌍 نامشخص'}</p>
                     <div class="qr-code" id="${qrId}"></div>
-                    <button class="btn btn-primary" onclick="copyConfig('${escapeHtml(c.config).replace(/'/g, "\\'")}')">📋 کپی کانفیگ</button>
-                    <p style="font-size:0.65em; margin-top:10px; word-break:break-all; color:#a6adc8;">${c.config.substring(0, 55)}...</p>
+                    <button class="btn btn-primary" onclick="copyConfig('${c.config.replace(/'/g, "\\'")}')">📋 کپی</button>
+                    <p style="font-size:0.7em; margin-top:10px;">${c.config.substring(0, 50)}...</p>
                 `;
                 grid.appendChild(card);
                 setTimeout(() => createQRCode(qrId, c.config), 100);
@@ -1185,7 +972,7 @@
             text += `# تاریخ: ${new Date().toLocaleString()}\n# تعداد: ${activeConfigs.length}\n\n`;
             activeConfigs.forEach((c, i) => {
                 const latencyDisplay = (c.latency === 999) ? 'نامشخص' : `${c.latency}ms`;
-                text += `# ${i+1}. ${c.location} | ${c.host}:${c.port} (${c.type}) - ${latencyDisplay}\n${c.config}\n\n`;
+                text += `# ${i+1}. ${c.host}:${c.port} (${c.type}) - ${latencyDisplay}\n${c.config}\n\n`;
             });
             const blob = new Blob([text], { type: 'text/plain' });
             const a = document.createElement('a');
@@ -1204,21 +991,16 @@
         function switchTab(tab) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            
             if (tab === 'auto') {
                 document.getElementById('autoTab').classList.add('active');
                 document.querySelector('.tab-btn').classList.add('active');
             } else if (tab === 'manual') {
                 document.getElementById('manualTab').classList.add('active');
                 document.querySelectorAll('.tab-btn')[1].classList.add('active');
-            } else if (tab === 'location') {
-                document.getElementById('locationTab').classList.add('active');
+            } else {
+                document.getElementById('topTab').classList.add('active');
                 document.querySelectorAll('.tab-btn')[2].classList.add('active');
-                refreshLocationGroups();
-            } else if (tab === 'top10') {
-                document.getElementById('top10Tab').classList.add('active');
-                document.querySelectorAll('.tab-btn')[3].classList.add('active');
-                refreshTop10();
+                refreshTopConfigs();
             }
         }
 
@@ -1232,7 +1014,7 @@
                 } catch(e) {}
             }
             document.getElementById('protoVmess').checked = settings.protocols.vmess;
-            document.getElementById('protoVless').checked = settings.protocols.vless;
+            document.getElementById('ProtoVless').checked = settings.protocols.vless;
             document.getElementById('protoTrojan').checked = settings.protocols.trojan;
             document.getElementById('apiUrl').value = API_URL;
             document.getElementById('maxConfigs').value = settings.maxConfigs;
@@ -1242,7 +1024,7 @@
         function saveSettings() {
             settings.protocols = {
                 vmess: document.getElementById('protoVmess').checked,
-                vless: document.getElementById('protoVless').checked,
+                vless: document.getElementById('ProtoVless').checked,
                 trojan: document.getElementById('protoTrojan').checked
             };
             settings.maxConfigs = parseInt(document.getElementById('maxConfigs').value);
@@ -1261,32 +1043,18 @@
             document.getElementById('settingsModal').classList.remove('active');
         }
 
-        // اتصال دکمه تست
+        // اتصال دکمه تست به تابع جدید
         document.getElementById('autoTestBtn').onclick = startAutoTestWithWake;
         
         // بارگذاری تنظیمات
         loadSettings();
         
-        // بیدار کردن سرور در پس‌زمینه
+        // اگر فایرفاکس نبود، سرور را در پس‌زمینه بیدار کن
         if (!isFirefox) {
             setTimeout(() => {
                 checkAndWakeServer(false);
             }, 1000);
         }
-        
-        // توابع گلوبال
-        window.toggleLocationGroup = toggleLocationGroup;
-        window.saveLocationConfigs = saveLocationConfigs;
-        window.copyConfig = copyConfig;
-        window.switchTab = switchTab;
-        window.openSettings = openSettings;
-        window.closeSettings = closeSettings;
-        window.closeServerStatusModal = closeServerStatusModal;
-        window.refreshLocationGroups = refreshLocationGroups;
-        window.refreshTop10 = refreshTop10;
-        window.startManualTest = startManualTest;
-        window.clearManual = clearManual;
-        window.saveConfigs = saveConfigs;
     </script>
 </body>
 </html>
