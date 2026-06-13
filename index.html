@@ -1005,43 +1005,42 @@
         }
 
         // ==================== توابع QR Code ====================
-     function createQRCode(elementId,text){
-
-    const container =
-        document.getElementById(elementId);
-
-    if(!container)
+// ==================== تابع اصلاح شده QR Code (مقاوم در برابر متن طولانی) ====================
+function createQRCode(elementId, text) {
+    const container = document.getElementById(elementId);
+    if (!container) {
+        console.error('عنصر یافت نشد:', elementId);
         return false;
-
-    container.innerHTML='';
-
-    try{
-
-        if(text.length > 2800){
-
-            container.innerHTML =
-                '<div class="qr-error">QR بسیار بزرگ است</div>';
-
-            return false;
+    }
+    
+    container.innerHTML = ''; // پاک کردن محتوای قبلی
+    
+    try {
+        let qrText = text;
+        
+        // حداکثر طول مجاز برای QR Code (به صورت محافظه‌کارانه 1900 کاراکتر)
+        const MAX_QR_LENGTH = 1900;
+        
+        if (qrText.length > MAX_QR_LENGTH) {
+            console.warn(`متن QR Code طولانی است (${qrText.length} کاراکتر). کوتاه می‌شود...`);
+            // متن را کوتاه می‌کنیم و در انتها سه نقطه اضافه می‌کنیم
+            qrText = qrText.substring(0, MAX_QR_LENGTH - 10) + '...[TRUNCATED]';
         }
-
-        new QRCode(container,{
-            text:text,
-            width:120,
-            height:120,
-            correctLevel:
-                QRCode.CorrectLevel.L
+        
+        // ساخت QR Code با تنظیمات بهینه
+        new QRCode(container, {
+            text: qrText,
+            width: 120,
+            height: 120,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.L // سطح L اجازه می‌دهد متن بیشتری ذخیره شود
         });
-
         return true;
-
-    }catch(err){
-
-        console.error(err);
-
-        container.innerHTML =
-            '<div class="qr-error">خطا در QR</div>';
-
+        
+    } catch(e) {
+        console.error('خطا در ساخت QR Code:', e);
+        container.innerHTML = '<div class="qr-error" style="font-size:11px; color:#f38ba8;">❌ QR<br>ساخته نشد</div>';
         return false;
     }
 }
