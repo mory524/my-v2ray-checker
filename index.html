@@ -460,45 +460,35 @@
 
         // دیکشنری لوکیشن با پرچم
         const countryFlags = {
-            'United States': '🇺🇸', 'US': '🇺🇸', 'USA': '🇺🇸', 'America': '🇺🇸',
+            'United States': '🇺🇸', 'US': '🇺🇸', 'USA': '🇺🇸',
             'Germany': '🇩🇪', 'DE': '🇩🇪',
             'Netherlands': '🇳🇱', 'NL': '🇳🇱',
             'France': '🇫🇷', 'FR': '🇫🇷',
-            'United Kingdom': '🇬🇧', 'UK': '🇬🇧', 'GB': '🇬🇧', 'England': '🇬🇧',
+            'United Kingdom': '🇬🇧', 'UK': '🇬🇧', 'GB': '🇬🇧',
             'Canada': '🇨🇦', 'CA': '🇨🇦',
             'Japan': '🇯🇵', 'JP': '🇯🇵',
             'Singapore': '🇸🇬', 'SG': '🇸🇬',
             'Russia': '🇷🇺', 'RU': '🇷🇺',
             'India': '🇮🇳', 'IN': '🇮🇳',
             'Australia': '🇦🇺', 'AU': '🇦🇺',
-            'Finland': '🇫🇮', 'FI': '🇫🇮',
-            'Sweden': '🇸🇪', 'SE': '🇸🇪',
-            'Norway': '🇳🇴', 'NO': '🇳🇴',
-            'Denmark': '🇩🇰', 'DK': '🇩🇰',
-            'Poland': '🇵🇱', 'PL': '🇵🇱',
             'Turkey': '🇹🇷', 'TR': '🇹🇷',
             'Iran': '🇮🇷', 'IR': '🇮🇷',
-            'UAE': '🇦🇪', 'AE': '🇦🇪',
             'Hong Kong': '🇭🇰', 'HK': '🇭🇰',
             'South Korea': '🇰🇷', 'KR': '🇰🇷',
             'Brazil': '🇧🇷', 'BR': '🇧🇷',
             'Switzerland': '🇨🇭', 'CH': '🇨🇭',
             'Italy': '🇮🇹', 'IT': '🇮🇹',
-            'Spain': '🇪🇸', 'ES': '🇪🇸',
-            'Israel': '🇮🇱', 'IL': '🇮🇱',
-            'South Africa': '🇿🇦', 'ZA': '🇿🇦'
+            'Spain': '🇪🇸', 'ES': '🇪🇸'
         };
 
         const persianNames = {
             'United States': 'آمریکا', 'Germany': 'آلمان', 'Netherlands': 'هلند',
             'France': 'فرانسه', 'United Kingdom': 'انگلستان', 'Canada': 'کانادا',
             'Japan': 'ژاپن', 'Singapore': 'سنگاپور', 'Russia': 'روسیه',
-            'India': 'هند', 'Australia': 'استرالیا', 'Finland': 'فنلاند',
-            'Sweden': 'سوئد', 'Norway': 'نروژ', 'Denmark': 'دانمارک',
-            'Poland': 'لهستان', 'Turkey': 'ترکیه', 'Iran': 'ایران',
-            'UAE': 'امارات', 'Hong Kong': 'هنگ‌کنگ', 'South Korea': 'کره جنوبی',
+            'India': 'هند', 'Australia': 'استرالیا', 'Turkey': 'ترکیه',
+            'Iran': 'ایران', 'Hong Kong': 'هنگ‌کنگ', 'South Korea': 'کره جنوبی',
             'Brazil': 'برزیل', 'Switzerland': 'سوئیس', 'Italy': 'ایتالیا',
-            'Spain': 'اسپانیا', 'Israel': 'اسرائیل', 'South Africa': 'آفریقای جنوبی'
+            'Spain': 'اسپانیا'
         };
 
         function getLocationDisplay(country) {
@@ -508,52 +498,28 @@
             return `${flag} ${persian}`;
         }
 
-        // دریافت لوکیشن از IP
+        // ==================== تابع اصلاح شده لوکیشن (بر اساس راهنمای شما) ====================
         async function getLocationForHost(host) {
             if (locationCache.has(host)) return locationCache.get(host);
-            
-            const apis = [
-                async () => {
-                    const res = await fetch(`https://ipapi.co/${host}/country/`, { signal: AbortSignal.timeout(3000) });
-                    const country = await res.text();
-                    if (country && country.length > 2 && country !== 'None') return country;
-                    return null;
-                },
-                async () => {
-                    const res = await fetch(`https://ipwhois.app/json/${host}?fields=country`, { signal: AbortSignal.timeout(3000) });
-                    const data = await res.json();
-                    if (data.country) return data.country;
-                    return null;
+
+            try {
+                // استفاده از ipwho.is که مستقیماً hostname را resolve می‌کند
+                const res = await fetch(`https://ipwho.is/${host}`, { signal: AbortSignal.timeout(5000) });
+                const data = await res.json();
+
+                if (data && data.success && data.country) {
+                    const country = data.country;
+                    const display = getLocationDisplay(country);
+                    locationCache.set(host, display);
+                    return display;
                 }
-            ];
-            
-            for (const api of apis) {
-                try {
-                    const country = await api();
-                    if (country) {
-                        const display = getLocationDisplay(country);
-                        locationCache.set(host, display);
-                        return display;
-                    }
-                } catch(e) { continue; }
+            } catch (e) {
+                console.log('ipwho.is error:', e);
             }
-            
-            let guess = '🌍 نامشخص';
-            const h = host.toLowerCase();
-            if (h.includes('.ir') || h.includes('iran')) guess = '🇮🇷 ایران';
-            else if (h.includes('.us') || h.includes('usa')) guess = '🇺🇸 آمریکا';
-            else if (h.includes('.de') || h.includes('germany')) guess = '🇩🇪 آلمان';
-            else if (h.includes('.nl') || h.includes('netherlands')) guess = '🇳🇱 هلند';
-            else if (h.includes('.fr') || h.includes('france')) guess = '🇫🇷 فرانسه';
-            else if (h.includes('.uk') || h.includes('.gb') || h.includes('london')) guess = '🇬🇧 انگلستان';
-            else if (h.includes('.ca') || h.includes('canada')) guess = '🇨🇦 کانادا';
-            else if (h.includes('.jp') || h.includes('japan')) guess = '🇯🇵 ژاپن';
-            else if (h.includes('.sg') || h.includes('singapore')) guess = '🇸🇬 سنگاپور';
-            else if (h.includes('.ru') || h.includes('russia')) guess = '🇷🇺 روسیه';
-            else if (h.includes('.tr') || h.includes('turkey')) guess = '🇹🇷 ترکیه';
-            
-            locationCache.set(host, guess);
-            return guess;
+
+            // Fallback ساده
+            locationCache.set(host, '🌍 نامشخص');
+            return '🌍 نامشخص';
         }
 
         const isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
@@ -1024,21 +990,18 @@
             });
         }
 
-        // ==================== ذخیره کانفیگ‌های یک دسته ====================
-        function saveLocationConfigs(location, configCount) {
-            // پیدا کردن کانفیگ‌های این لوکیشن
-            const configsToSave = activeConfigs.filter(c => (c.location || '🌍 نامشخص') === location);
-            
-            if (!configsToSave.length) {
+        // ==================== ذخیره کانفیگ‌های یک دسته (اصلاح شده با event listener) ====================
+        function saveLocationConfigs(location, configs) {
+            if (!configs || !configs.length) {
                 alert('هیچ کانفیگی در این دسته وجود ندارد!');
                 return;
             }
             
             let text = `# V2Ray Configs - کانفیگ‌های ${location}\n`;
             text += `# تاریخ: ${new Date().toLocaleString()}\n`;
-            text += `# تعداد: ${configsToSave.length}\n\n`;
+            text += `# تعداد: ${configs.length}\n\n`;
             
-            configsToSave.forEach((c, i) => {
+            configs.forEach((c, i) => {
                 const latencyDisplay = (c.latency === 999 || c.latency === -1) ? 'نامشخص' : `${c.latency}ms`;
                 text += `# ${i+1}. ${c.host}:${c.port} (${c.type}) - ${latencyDisplay} - ${c.name}\n${c.config}\n\n`;
             });
@@ -1051,10 +1014,10 @@
             a.click();
             URL.revokeObjectURL(a.href);
             
-            updateStatus(`💾 ${configsToSave.length} کانفیگ از ${location} ذخیره شد`);
+            updateStatus(`💾 ${configs.length} کانفیگ از ${location} ذخیره شد`);
         }
 
-        // ==================== دسته‌بندی لوکیشن با دکمه ذخیره ====================
+        // ==================== دسته‌بندی لوکیشن با دکمه ذخیره (اصلاح شده) ====================
         function refreshLocationGroups() {
             const grid = document.getElementById('locationGrid');
             if (!grid) return;
@@ -1078,7 +1041,8 @@
             
             for (const location of sortedGroups) {
                 const configs = groups.get(location);
-                const groupId = `loc-group-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+                // استفاده از ID ثابت برای هر لوکیشن (بدون Date.now)
+                const groupId = `loc-group-${location.replace(/\s/g, '-').replace(/[^a-zA-Z0-9\u0600-\u06FF-]/g, '')}`;
                 
                 const wrapper = document.createElement('div');
                 wrapper.className = 'location-group';
@@ -1087,10 +1051,17 @@
                         <span>${location}</span>
                         <span class="count">${configs.length} کانفیگ</span>
                         <span class="arrow">▼</span>
-                        <button class="save-location-btn" onclick="event.stopPropagation(); saveLocationConfigs('${location.replace(/'/g, "\\'")}', ${configs.length})">💾 ذخیره این دسته</button>
+                        <button class="save-location-btn">💾 ذخیره این دسته</button>
                     </div>
                     <div id="${groupId}" class="location-configs"><div class="qr-grid"></div></div>
                 `;
+                
+                // اضافه کردن event listener به دکمه ذخیره (روش استاندارد)
+                const saveBtn = wrapper.querySelector('.save-location-btn');
+                saveBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    saveLocationConfigs(location, configs);
+                });
                 
                 const qrContainer = wrapper.querySelector('.qr-grid');
                 for (let i = 0; i < configs.length; i++) {
