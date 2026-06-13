@@ -460,49 +460,56 @@
             return `🌍 ${countryName}`;
         }
 
-        // ==================== تابع لوکیشن که واقعاً کار می‌کند ====================
+        // تابع کمکی برای ایجاد وقفه بین درخواست‌ها (برای جلوگیری از Rate Limit)
+        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+        // ==================== تابع لوکیشن اصلاح شده (بر اساس راهنمای شما) ====================
         async function getLocationForHost(host) {
             if (locationCache.has(host)) return locationCache.get(host);
             
-            // اگر IP لوکال یا localhost بود
+            // شناسایی IP های داخلی و لوکال
             if (host === 'localhost' || host === '127.0.0.1' || host.startsWith('192.168.') || host.startsWith('10.')) {
                 locationCache.set(host, '🏠 محلی');
                 return '🏠 محلی';
             }
             
             try {
-                // استفاده از ipapi.co با timeout بیشتر
+                // ایجاد وقفه 300 میلی‌ثانیه برای جلوگیری از مسدود شدن IP
+                await sleep(300);
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 8000);
-                const response = await fetch(`https://ipapi.co/${host}/json/`, { signal: controller.signal });
+                
+                // استفاده از ipwho.is که برای کلاینت‌ساید بهینه‌تر و رایگان است
+                const response = await fetch(`https://ipwho.is/${host}`, { signal: controller.signal });
                 clearTimeout(timeoutId);
                 
                 if (response.ok) {
                     const data = await response.json();
-                    if (data && data.country_name) {
-                        const display = getCountryDisplay(data.country_name);
+                    if (data && data.success && data.country) {
+                        const display = getCountryDisplay(data.country);
                         locationCache.set(host, display);
                         return display;
                     }
                 }
             } catch(e) {
-                console.log('ipapi.co error:', e);
+                console.warn(`Geolocation fetch failed for ${host}:`, e.message);
             }
             
-            // Fallback: حدس بر اساس پسوند دامنه
+            // Fallback: حدس دقیق‌تر بر اساس پسوند دامنه (با استفاده از رجکس)
             let guess = '🌍 نامشخص';
             const h = host.toLowerCase();
-            if (h.includes('.ir') || h.includes('iran')) guess = '🇮🇷 ایران';
-            else if (h.includes('.us') || h.includes('usa')) guess = '🇺🇸 آمریکا';
-            else if (h.includes('.de') || h.includes('germany')) guess = '🇩🇪 آلمان';
-            else if (h.includes('.nl') || h.includes('netherlands')) guess = '🇳🇱 هلند';
-            else if (h.includes('.fr') || h.includes('france')) guess = '🇫🇷 فرانسه';
-            else if (h.includes('.uk') || h.includes('.gb') || h.includes('london')) guess = '🇬🇧 انگلستان';
-            else if (h.includes('.ca') || h.includes('canada')) guess = '🇨🇦 کانادا';
-            else if (h.includes('.jp') || h.includes('japan')) guess = '🇯🇵 ژاپن';
-            else if (h.includes('.sg') || h.includes('singapore')) guess = '🇸🇬 سنگاپور';
-            else if (h.includes('.ru') || h.includes('russia')) guess = '🇷🇺 روسیه';
-            else if (h.includes('.tr') || h.includes('turkey')) guess = '🇹🇷 ترکیه';
+            
+            if (/\.ir$/.test(h) || h.includes('iran')) guess = '🇮🇷 ایران';
+            else if (/\.us$/.test(h) || h.includes('usa')) guess = '🇺🇸 آمریکا';
+            else if (/\.de$/.test(h) || h.includes('germany')) guess = '🇩🇪 آلمان';
+            else if (/\.nl$/.test(h) || h.includes('netherlands')) guess = '🇳🇱 هلند';
+            else if (/\.fr$/.test(h) || h.includes('france')) guess = '🇫🇷 فرانسه';
+            else if (/\.uk$/.test(h) || /\.gb$/.test(h) || h.includes('london')) guess = '🇬🇧 انگلستان';
+            else if (/\.ca$/.test(h) || h.includes('canada')) guess = '🇨🇦 کانادا';
+            else if (/\.jp$/.test(h) || h.includes('japan')) guess = '🇯🇵 ژاپن';
+            else if (/\.sg$/.test(h) || h.includes('singapore')) guess = '🇸🇬 سنگاپور';
+            else if (/\.ru$/.test(h) || h.includes('russia')) guess = '🇷🇺 روسیه';
+            else if (/\.tr$/.test(h) || h.includes('turkey')) guess = '🇹🇷 ترکیه';
             
             locationCache.set(host, guess);
             return guess;
@@ -567,6 +574,7 @@
 
         function closeServerStatusModal() { document.getElementById('serverStatusModal').classList.remove('active'); }
 
+        // ==================== تابع parseConfig اصلاح شده با پشتیبانی از IPv6 ====================
         function parseConfig(config) {
             try {
                 if (config.startsWith('vmess://')) {
@@ -575,10 +583,12 @@
                     let obj = JSON.parse(atob(b64));
                     return { host: obj.add, port: obj.port, name: obj.ps || 'VMess', type: 'vmess' };
                 } else if (config.startsWith('vless://')) {
-                    let match = config.match(/@([^:]+):(\d+)/);
+                    // پشتیبانی همزمان از دامین، IPv4 و IPv6
+                    let match = config.match(/@(\[[a-fA-F0-9:]+\]|[^:]+):(\d+)/);
                     if (match) return { host: match[1], port: match[2], name: 'VLESS', type: 'vless' };
                 } else if (config.startsWith('trojan://')) {
-                    let match = config.match(/@([^:]+):(\d+)/);
+                    // پشتیبانی همزمان از دامین، IPv4 و IPv6
+                    let match = config.match(/@(\[[a-fA-F0-9:]+\]|[^:]+):(\d+)/);
                     if (match) return { host: match[1], port: match[2], name: 'Trojan', type: 'trojan' };
                 }
             } catch(e) { return null; }
