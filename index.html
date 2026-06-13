@@ -433,6 +433,7 @@
     </div>
 
     <script>
+
         // ==================== تنظیمات اولیه ====================
         let API_URL = "https://v2ray-validator.onrender.com";
         let activeConfigs = [];
@@ -440,6 +441,7 @@
         let isTesting = false;
         let isWakingUp = false;
         let locationCache = new Map();
+		let locationGroupsMap = new Map();
         
         let settings = {
             protocols: { vmess: true, vless: true, trojan: true },
@@ -509,63 +511,72 @@
         }
 
         // دریافت لوکیشن از IP با چندین API پشتیبان
-        async function getLocationForHost(host) {
-            if (locationCache.has(host)) return locationCache.get(host);
-            
-            // لیست API های پشتیبان
-            const apis = [
-                async () => {
-                    const res = await fetch(`https://ipapi.co/${host}/country/`, { signal: AbortSignal.timeout(3000) });
-                    const country = await res.text();
-                    if (country && country.length > 2 && country !== 'None') return country;
-                    return null;
-                },
-                async () => {
-                    const res = await fetch(`https://ipwhois.app/json/${host}?fields=country`, { signal: AbortSignal.timeout(3000) });
-                    const data = await res.json();
-                    if (data.country) return data.country;
-                    return null;
-                },
-                async () => {
-                    const res = await fetch(`https://freeipapi.com/api/json/${host}`, { signal: AbortSignal.timeout(3000) });
-                    const data = await res.json();
-                    if (data.countryName) return data.countryName;
-                    return null;
-                }
-            ];
-            
-            for (const api of apis) {
-                try {
-                    const country = await api();
-                    if (country) {
-                        const display = getLocationDisplay(country);
-                        locationCache.set(host, display);
-                        return display;
-                    }
-                } catch(e) { continue; }
+     async function getLocationForHost(host) {
+
+    if (!host)
+        return '🌍 نامشخص';
+
+    if (locationCache.has(host))
+        return locationCache.get(host);
+
+    try {
+
+        let ip = host;
+
+        const isIp =
+            /^(\d{1,3}\.){3}\d{1,3}$/.test(host);
+
+        if (!isIp) {
+
+            const dnsResponse =
+                await fetch(
+                    `https://dns.google/resolve?name=${host}&type=A`
+                );
+
+            const dnsData =
+                await dnsResponse.json();
+
+            if (
+                dnsData.Answer &&
+                dnsData.Answer.length
+            ) {
+
+                ip =
+                    dnsData.Answer[
+                        dnsData.Answer.length - 1
+                    ].data;
             }
-            
-            // Fallback: حدس بر اساس پسوند دامنه و نام
-            let guess = '🌍 نامشخص';
-            const h = host.toLowerCase();
-            if (h.includes('.ir') || h.includes('iran')) guess = '🇮🇷 ایران';
-            else if (h.includes('.us') || h.includes('usa') || h.includes('unitedstates')) guess = '🇺🇸 آمریکا';
-            else if (h.includes('.de') || h.includes('germany') || h.includes('frankfurt')) guess = '🇩🇪 آلمان';
-            else if (h.includes('.nl') || h.includes('netherlands') || h.includes('amsterdam')) guess = '🇳🇱 هلند';
-            else if (h.includes('.fr') || h.includes('france') || h.includes('paris')) guess = '🇫🇷 فرانسه';
-            else if (h.includes('.uk') || h.includes('.gb') || h.includes('london')) guess = '🇬🇧 انگلستان';
-            else if (h.includes('.ca') || h.includes('canada')) guess = '🇨🇦 کانادا';
-            else if (h.includes('.jp') || h.includes('japan') || h.includes('tokyo')) guess = '🇯🇵 ژاپن';
-            else if (h.includes('.sg') || h.includes('singapore')) guess = '🇸🇬 سنگاپور';
-            else if (h.includes('.ru') || h.includes('russia') || h.includes('moscow')) guess = '🇷🇺 روسیه';
-            else if (h.includes('.tr') || h.includes('turkey') || h.includes('istanbul')) guess = '🇹🇷 ترکیه';
-            else if (h.includes('cloudflare')) guess = '☁️ کلودفلر';
-            else if (h.includes('amazon') || h.includes('aws')) guess = '☁️ آمازون';
-            else if (h.includes('google') || h.includes('gcp')) guess = '🔵 گوگل';
-            
-            locationCache.set(host, guess);
-            return guess;
         }
+
+        const geoResponse =
+            await fetch(
+                `https://ipapi.co/${ip}/json/`
+            );
+
+        const geoData =
+            await geoResponse.json();
+
+        if (geoData.country_name) {
+
+            const location =
+                getLocationDisplay(
+                    geoData.country_name
+                );
+
+            locationCache.set(
+                host,
+                location
+            );
+
+            return location;
+        }
+
+    } catch (e) {
+        console.error(e);
+    }
+
+    return '🌍 نامشخص';
+}
 
         // تشخیص مرورگر فایرفاکس
         const isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
@@ -1005,27 +1016,46 @@
         }
 
         // ==================== توابع QR Code ====================
-        function createQRCode(elementId, text) {
-            const container = document.getElementById(elementId);
-            if (!container) return false;
-            container.innerHTML = '';
-            try {
-                let qrText = text.length > 2000 ? text.substring(0, 1900) : text;
-                new QRCode(container, {
-                    text: qrText,
-                    width: 120,
-                    height: 120,
-                    colorDark: "#000000",
-                    colorLight: "#ffffff",
-                    correctLevel: QRCode.CorrectLevel.L
-                });
-                return true;
-            } catch(e) {
-                container.innerHTML = '<div class="qr-error">❌ QR<br>ساخته نشد</div>';
-                return false;
-            }
+        function createQRCode(elementId,text){
+
+    const container =
+        document.getElementById(elementId);
+
+    if(!container)
+        return false;
+
+    container.innerHTML='';
+
+    try{
+
+        if(text.length > 2800){
+
+            container.innerHTML =
+                '<div class="qr-error">QR بسیار بزرگ است</div>';
+
+            return false;
         }
 
+        new QRCode(container,{
+            text:text,
+            width:120,
+            height:120,
+            correctLevel:
+                QRCode.CorrectLevel.L
+        });
+
+        return true;
+
+    }catch(err){
+
+        console.error(err);
+
+        container.innerHTML =
+            '<div class="qr-error">خطا در QR</div>';
+
+        return false;
+    }
+}
         function escapeHtml(str) {
             if (!str) return '';
             return str.replace(/[&<>]/g, function(m) {
@@ -1037,31 +1067,41 @@
         }
 
         // ==================== ذخیره کانفیگ‌های یک دسته ====================
-        function saveLocationConfigs(location, configs) {
-            if (!configs.length) {
-                alert('هیچ کانفیگی در این دسته وجود ندارد!');
-                return;
-            }
-            
-            let text = `# V2Ray Configs - کانفیگ‌های ${location}\n`;
-            text += `# تاریخ: ${new Date().toLocaleString()}\n`;
-            text += `# تعداد: ${configs.length}\n\n`;
-            
-            configs.forEach((c, i) => {
-                const latencyDisplay = (c.latency === 999 || c.latency === -1) ? 'نامشخص' : `${c.latency}ms`;
-                text += `# ${i+1}. ${c.host}:${c.port} (${c.type}) - ${latencyDisplay} - ${c.name}\n${c.config}\n\n`;
-            });
-            
-            const blob = new Blob([text], { type: 'text/plain' });
-            const a = document.createElement('a');
-            const safeName = location.replace(/[^a-zA-Z0-9\u0600-\u06FF]/g, '_');
-            a.download = `v2ray_${safeName}_${new Date().toISOString().slice(0,19)}.txt`;
-            a.href = URL.createObjectURL(blob);
-            a.click();
-            URL.revokeObjectURL(a.href);
-            
-            updateStatus(`💾 ${configs.length} کانفیگ از ${location} ذخیره شد`);
-        }
+       function saveLocationConfigs(location) {
+
+    const configs =
+        locationGroupsMap.get(location);
+
+    if (!configs) {
+        alert("هیچ کانفیگی وجود ندارد");
+        return;
+    }
+
+    let text = "";
+
+    configs.forEach(cfg => {
+        text += cfg.config + "\n";
+    });
+
+    const blob =
+        new Blob(
+            [text],
+            { type: "text/plain" }
+        );
+
+    const a =
+        document.createElement("a");
+
+    a.href =
+        URL.createObjectURL(blob);
+
+    a.download =
+        location + ".txt";
+
+    a.click();
+
+    URL.revokeObjectURL(a.href);
+}
 
         // ==================== دسته‌بندی لوکیشن با دکمه ذخیره ====================
         function refreshLocationGroups() {
@@ -1076,12 +1116,14 @@
             
             // گروه‌بندی بر اساس لوکیشن
             const groups = new Map();
+		
             for (const cfg of activeConfigs) {
                 const loc = cfg.location || '🌍 نامشخص';
                 if (!groups.has(loc)) groups.set(loc, []);
                 groups.get(loc).push(cfg);
+				
             }
-            
+            locationGroupsMap = groups;
             // مرتب‌سازی گروه‌ها
             const sortedGroups = Array.from(groups.keys()).sort();
             
@@ -1096,7 +1138,7 @@
                         <span>${location}</span>
                         <span class="count">${configs.length} کانفیگ</span>
                         <span class="arrow">▼</span>
-                        <button class="save-location-btn" onclick="event.stopPropagation(); saveLocationConfigs('${location.replace(/'/g, "\\'")}', ${JSON.stringify(configs).replace(/'/g, "\\'")})">💾 ذخیره این دسته</button>
+                        <button class="save-location-btn" onclick="event.stopPropagation(); saveLocationConfigs('${location.replace(/'/g, "\\'")}')">💾 ذخیره این دسته</button>
                     </div>
                     <div id="${groupId}" class="location-configs"><div class="qr-grid"></div></div>
                 `;
@@ -1117,11 +1159,17 @@
                         <p>⚡ تاخیر: ${latencyDisplay}</p>
                         <p>🗺️ ${c.location}</p>
                         <div class="qr-code" id="${qrId}"></div>
-                        <button class="btn btn-primary" onclick="copyConfig('${escapeHtml(c.config).replace(/'/g, "\\'")}')">📋 کپی کانفیگ</button>
+                        <button class="btn btn-primary" onclick="copyConfig(
+decodeURIComponent(
+'${encodeURIComponent(c.config)}'
+)
+)">📋 کپی کانفیگ</button>
                         <p style="font-size:0.65em; margin-top:10px; word-break:break-all; color:#a6adc8;">${c.config.substring(0, 55)}...</p>
                     `;
                     qrContainer.appendChild(card);
-                    setTimeout(() => createQRCode(qrId, c.config), 100);
+                    requestAnimationFrame(() => {
+    createQRCode(qrId, c.config);
+});
                 }
                 grid.appendChild(wrapper);
             }
@@ -1164,11 +1212,17 @@
                     <p>⚡ تاخیر: ${latencyDisplay}</p>
                     <p>🗺️ ${c.location || '🌍 نامشخص'}</p>
                     <div class="qr-code" id="${qrId}"></div>
-                    <button class="btn btn-primary" onclick="copyConfig('${escapeHtml(c.config).replace(/'/g, "\\'")}')">📋 کپی کانفیگ</button>
+                    <button class="btn btn-primary" onclick="copyConfig(
+decodeURIComponent(
+'${encodeURIComponent(c.config)}'
+)
+)">📋 کپی کانفیگ</button>
                     <p style="font-size:0.65em; margin-top:10px; word-break:break-all; color:#a6adc8;">${c.config.substring(0, 55)}...</p>
                 `;
                 grid.appendChild(card);
-                setTimeout(() => createQRCode(qrId, c.config), 100);
+                requestAnimationFrame(() => {
+    createQRCode(qrId, c.config);
+});
             }
         }
 
