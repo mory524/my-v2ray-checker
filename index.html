@@ -508,64 +508,111 @@
             return `${flag} ${persian}`;
         }
 
-        // دریافت لوکیشن از IP با چندین API پشتیبان
-        async function getLocationForHost(host) {
-            if (locationCache.has(host)) return locationCache.get(host);
-            
-            // لیست API های پشتیبان
-            const apis = [
-                async () => {
-                    const res = await fetch(`https://ipapi.co/${host}/country/`, { signal: AbortSignal.timeout(3000) });
-                    const country = await res.text();
-                    if (country && country.length > 2 && country !== 'None') return country;
-                    return null;
-                },
-                async () => {
-                    const res = await fetch(`https://ipwhois.app/json/${host}?fields=country`, { signal: AbortSignal.timeout(3000) });
-                    const data = await res.json();
-                    if (data.country) return data.country;
-                    return null;
-                },
-                async () => {
-                    const res = await fetch(`https://freeipapi.com/api/json/${host}`, { signal: AbortSignal.timeout(3000) });
-                    const data = await res.json();
-                    if (data.countryName) return data.countryName;
-                    return null;
-                }
-            ];
-            
-            for (const api of apis) {
-                try {
-                    const country = await api();
-                    if (country) {
-                        const display = getLocationDisplay(country);
-                        locationCache.set(host, display);
-                        return display;
-                    }
-                } catch(e) { continue; }
-            }
-            
-            // Fallback: حدس بر اساس پسوند دامنه و نام
-            let guess = '🌍 نامشخص';
-            const h = host.toLowerCase();
-            if (h.includes('.ir') || h.includes('iran')) guess = '🇮🇷 ایران';
-            else if (h.includes('.us') || h.includes('usa') || h.includes('unitedstates')) guess = '🇺🇸 آمریکا';
-            else if (h.includes('.de') || h.includes('germany') || h.includes('frankfurt')) guess = '🇩🇪 آلمان';
-            else if (h.includes('.nl') || h.includes('netherlands') || h.includes('amsterdam')) guess = '🇳🇱 هلند';
-            else if (h.includes('.fr') || h.includes('france') || h.includes('paris')) guess = '🇫🇷 فرانسه';
-            else if (h.includes('.uk') || h.includes('.gb') || h.includes('london')) guess = '🇬🇧 انگلستان';
-            else if (h.includes('.ca') || h.includes('canada')) guess = '🇨🇦 کانادا';
-            else if (h.includes('.jp') || h.includes('japan') || h.includes('tokyo')) guess = '🇯🇵 ژاپن';
-            else if (h.includes('.sg') || h.includes('singapore')) guess = '🇸🇬 سنگاپور';
-            else if (h.includes('.ru') || h.includes('russia') || h.includes('moscow')) guess = '🇷🇺 روسیه';
-            else if (h.includes('.tr') || h.includes('turkey') || h.includes('istanbul')) guess = '🇹🇷 ترکیه';
-            else if (h.includes('cloudflare')) guess = '☁️ کلودفلر';
-            else if (h.includes('amazon') || h.includes('aws')) guess = '☁️ آمازون';
-            else if (h.includes('google') || h.includes('gcp')) guess = '🔵 گوگل';
-            
-            locationCache.set(host, guess);
-            return guess;
+     // ==================== تابع لوکیشن با ۴ API پشتیبان ====================
+async function getLocationForHost(host) {
+    // چک کردن کش
+    if (locationCache.has(host)) return locationCache.get(host);
+
+    // IP های داخلی
+    if (host === 'localhost' || host === '127.0.0.1' || host.startsWith('192.168.') || host.startsWith('10.')) {
+        locationCache.set(host, '🏠 محلی');
+        return '🏠 محلی';
+    }
+
+    // لیست API های پشتیبان (به ترتیب اولویت)
+    const apis = [
+        {
+            name: 'ipapi.co',
+            url: `https://ipapi.co/${host}/json/`,
+            parser: (data) => data.country_name ? { country: data.country_name, code: data.country_code } : null
+        },
+        {
+            name: 'ip-api.com',
+            url: `http://ip-api.com/json/${host}?fields=status,country,countryCode`,
+            parser: (data) => data.status === 'success' ? { country: data.country, code: data.countryCode } : null
+        },
+        {
+            name: 'freeipapi.com',
+            url: `https://freeipapi.com/api/json/${host}`,
+            parser: (data) => data.countryName ? { country: data.countryName, code: data.countryCode } : null
+        },
+        {
+            name: 'jaiho-ip',
+            url: `https://jaiho-ip.vercel.app/api/json?ip=${host}`,
+            parser: (data) => data.location?.country ? { country: data.location.country, code: null } : null
         }
+    ];
+
+    // تابع تبدیل کد کشور به پرچم
+    function getFlag(countryCode) {
+        if (!countryCode) return '🌍';
+        try {
+            const codePoints = countryCode.toUpperCase().split('').map(c => 127397 + c.charCodeAt(0));
+            return String.fromCodePoint(...codePoints);
+        } catch(e) { return '🌍'; }
+    }
+
+    // دیکشنری نام فارسی کشورها
+    function getPersianName(country) {
+        const names = {
+            'United States': 'آمریکا', 'Germany': 'آلمان', 'Netherlands': 'هلند',
+            'France': 'فرانسه', 'United Kingdom': 'انگلستان', 'Canada': 'کانادا',
+            'Japan': 'ژاپن', 'Singapore': 'سنگاپور', 'Russia': 'روسیه',
+            'India': 'هند', 'Australia': 'استرالیا', 'Turkey': 'ترکیه',
+            'Iran': 'ایران', 'Hong Kong': 'هنگ‌کنگ', 'South Korea': 'کره جنوبی',
+            'Brazil': 'برزیل', 'Switzerland': 'سوئیس', 'Italy': 'ایتالیا',
+            'Spain': 'اسپانیا', 'Poland': 'لهستان', 'Sweden': 'سوئد',
+            'Norway': 'نروژ', 'Denmark': 'دانمارک', 'Finland': 'فنلاند'
+        };
+        return names[country] || country;
+    }
+
+    // امتحان کردن API ها به ترتیب
+    for (const api of apis) {
+        try {
+            await new Promise(resolve => setTimeout(resolve, 200));
+            
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
+            const response = await fetch(api.url, { signal: controller.signal });
+            clearTimeout(timeoutId);
+
+            if (response.ok) {
+                const data = await response.json();
+                const parsed = api.parser(data);
+                
+                if (parsed && parsed.country) {
+                    const flag = getFlag(parsed.code);
+                    const persian = getPersianName(parsed.country);
+                    const display = `${flag} ${persian}`;
+                    locationCache.set(host, display);
+                    return display;
+                }
+            }
+        } catch(e) {
+            console.log(`${api.name} failed:`, e.message);
+            continue;
+        }
+    }
+
+    // Fallback نهایی: حدس بر اساس پسوند دامنه
+    let guess = '🌍 نامشخص';
+    const h = host.toLowerCase();
+    if (h.includes('.ir') || h.includes('iran')) guess = '🇮🇷 ایران';
+    else if (h.includes('.us') || h.includes('usa')) guess = '🇺🇸 آمریکا';
+    else if (h.includes('.de') || h.includes('germany')) guess = '🇩🇪 آلمان';
+    else if (h.includes('.nl') || h.includes('netherlands')) guess = '🇳🇱 هلند';
+    else if (h.includes('.fr') || h.includes('france')) guess = '🇫🇷 فرانسه';
+    else if (h.includes('.uk') || h.includes('.gb') || h.includes('london')) guess = '🇬🇧 انگلستان';
+    else if (h.includes('.ca') || h.includes('canada')) guess = '🇨🇦 کانادا';
+    else if (h.includes('.jp') || h.includes('japan')) guess = '🇯🇵 ژاپن';
+    else if (h.includes('.sg') || h.includes('singapore')) guess = '🇸🇬 سنگاپور';
+    else if (h.includes('.ru') || h.includes('russia')) guess = '🇷🇺 روسیه';
+    else if (h.includes('.tr') || h.includes('turkey')) guess = '🇹🇷 ترکیه';
+
+    locationCache.set(host, guess);
+    return guess;
+}
 
         // تشخیص مرورگر فایرفاکس
         const isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
