@@ -1004,8 +1004,9 @@
             updateStatus(`✅ تست دستی کامل شد - ${liveCount} کانفیگ تأیید شده`);
         }
 
-        // ==================== توابع QR Code ====================
-// ==================== تابع اصلاح شده QR Code (مقاوم در برابر متن طولانی) ====================
+    
+
+// ==================== تابع QR Code اصلاح شده نهایی ====================
 function createQRCode(elementId, text) {
     const container = document.getElementById(elementId);
     if (!container) {
@@ -1013,38 +1014,32 @@ function createQRCode(elementId, text) {
         return false;
     }
     
-    container.innerHTML = ''; // پاک کردن محتوای قبلی
+    container.innerHTML = '';
     
     try {
         let qrText = text;
         
-        // حداکثر طول مجاز برای QR Code (به صورت محافظه‌کارانه 1900 کاراکتر)
-        const MAX_QR_LENGTH = 1900;
-        
-        if (qrText.length > MAX_QR_LENGTH) {
-            console.warn(`متن QR Code طولانی است (${qrText.length} کاراکتر). کوتاه می‌شود...`);
-            // متن را کوتاه می‌کنیم و در انتها سه نقطه اضافه می‌کنیم
-            qrText = qrText.substring(0, MAX_QR_LENGTH - 10) + '...[TRUNCATED]';
+        // محدودیت طول برای QR Code
+        if (qrText.length > 2000) {
+            qrText = qrText.substring(0, 1950) + '...';
         }
         
-        // ساخت QR Code با تنظیمات بهینه
         new QRCode(container, {
             text: qrText,
             width: 120,
             height: 120,
             colorDark: "#000000",
             colorLight: "#ffffff",
-            correctLevel: QRCode.CorrectLevel.L // سطح L اجازه می‌دهد متن بیشتری ذخیره شود
+            correctLevel: QRCode.CorrectLevel.L
         });
         return true;
         
     } catch(e) {
-        console.error('خطا در ساخت QR Code:', e);
-        container.innerHTML = '<div class="qr-error" style="font-size:11px; color:#f38ba8;">❌ QR<br>ساخته نشد</div>';
+        console.error('QR Error:', e);
+        container.innerHTML = '<div class="qr-error" style="font-size:11px;color:#f38ba8;">❌</div>';
         return false;
     }
 }
-
         function escapeHtml(str) {
             if (!str) return '';
             return str.replace(/[&<>]/g, function(m) {
@@ -1082,69 +1077,82 @@ function createQRCode(elementId, text) {
             updateStatus(`💾 ${configs.length} کانفیگ از ${location} ذخیره شد`);
         }
 
-        // ==================== دسته‌بندی لوکیشن با دکمه ذخیره ====================
-        function refreshLocationGroups() {
-            const grid = document.getElementById('locationGrid');
-            if (!grid) return;
-            grid.innerHTML = '';
-            
-            if (!activeConfigs.length) {
-                grid.innerHTML = '<div style="text-align:center; padding:40px;">⚠️ هنوز کانفیگ ۱۰۰٪ تضمینی وجود ندارد! لطفاً ابتدا تست واقعی را انجام دهید.</div>';
-                return;
-            }
-            
-            // گروه‌بندی بر اساس لوکیشن
-            const groups = new Map();
-            for (const cfg of activeConfigs) {
-                const loc = cfg.location || '🌍 نامشخص';
-                if (!groups.has(loc)) groups.set(loc, []);
-                groups.get(loc).push(cfg);
-            }
-            
-            // مرتب‌سازی گروه‌ها
-            const sortedGroups = Array.from(groups.keys()).sort();
-            
-            for (const location of sortedGroups) {
-                const configs = groups.get(location);
-                const groupId = `loc-group-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
-                
-                const wrapper = document.createElement('div');
-                wrapper.className = 'location-group';
-                wrapper.innerHTML = `
-                    <div class="location-header" onclick="toggleLocationGroup('${groupId}')">
-                        <span>${location}</span>
-                        <span class="count">${configs.length} کانفیگ</span>
-                        <span class="arrow">▼</span>
-                        <button class="save-location-btn" onclick="event.stopPropagation(); saveLocationConfigs('${location.replace(/'/g, "\\'")}', ${JSON.stringify(configs).replace(/'/g, "\\'")})">💾 ذخیره این دسته</button>
-                    </div>
-                    <div id="${groupId}" class="location-configs"><div class="qr-grid"></div></div>
-                `;
-                
-                const qrContainer = wrapper.querySelector('.qr-grid');
-                for (let i = 0; i < configs.length; i++) {
-                    const c = configs[i];
-                    const qrId = `loc-qr-${Date.now()}-${i}-${Math.random().toString(36).substr(2, 4)}`;
-                    const latencyDisplay = (c.latency === 999 || c.latency === -1) ? 'نامشخص' : `${c.latency}ms`;
-                    const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`;
-                    const medalColor = i === 0 ? '#f9e2af' : i === 1 ? '#cba6f7' : i === 2 ? '#fab387' : '#89b4fa';
-                    
-                    const card = document.createElement('div');
-                    card.className = 'qr-card';
-                    card.innerHTML = `
-                        <h3 style="color: ${medalColor};">${medal} ${escapeHtml(c.name)} (${c.type})</h3>
-                        <p>📍 ${c.host}:${c.port}</p>
-                        <p>⚡ تاخیر: ${latencyDisplay}</p>
-                        <p>🗺️ ${c.location}</p>
-                        <div class="qr-code" id="${qrId}"></div>
-                        <button class="btn btn-primary" onclick="copyConfig('${escapeHtml(c.config).replace(/'/g, "\\'")}')">📋 کپی کانفیگ</button>
-                        <p style="font-size:0.65em; margin-top:10px; word-break:break-all; color:#a6adc8;">${c.config.substring(0, 55)}...</p>
-                    `;
-                    qrContainer.appendChild(card);
-                    requestAnimationFrame(() => {     createQRCode(qrId, c.config); });
-                }
-                grid.appendChild(wrapper);
-            }
+     // ==================== دسته‌بندی لوکیشن با دکمه ذخیره ====================
+function refreshLocationGroups() {
+    const grid = document.getElementById('locationGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    
+    if (!activeConfigs.length) {
+        grid.innerHTML = '<div style="text-align:center; padding:40px;">⚠️ هنوز کانفیگ ۱۰۰٪ تضمینی وجود ندارد! لطفاً ابتدا تست واقعی را انجام دهید.</div>';
+        return;
+    }
+    
+    // گروه‌بندی بر اساس لوکیشن
+    const groups = new Map();
+    for (const cfg of activeConfigs) {
+        const loc = cfg.location || '🌍 نامشخص';
+        if (!groups.has(loc)) groups.set(loc, []);
+        groups.get(loc).push(cfg);
+    }
+    
+    // مرتب‌سازی گروه‌ها
+    const sortedGroups = Array.from(groups.keys()).sort();
+    
+    for (const location of sortedGroups) {
+        const configs = groups.get(location);
+        const groupId = `loc-group-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+        
+        const wrapper = document.createElement('div');
+        wrapper.className = 'location-group';
+        wrapper.innerHTML = `
+            <div class="location-header" onclick="toggleLocationGroup('${groupId}')">
+                <span>${location}</span>
+                <span class="count">${configs.length} کانفیگ</span>
+                <span class="arrow">▼</span>
+                <button class="save-location-btn" id="save-btn-${groupId}">💾 ذخیره این دسته</button>
+            </div>
+            <div id="${groupId}" class="location-configs"><div class="qr-grid"></div></div>
+        `;
+        
+        // اتصال event listener به دکمه ذخیره (به جای onclick در HTML)
+        const saveBtn = wrapper.querySelector(`#save-btn-${groupId}`);
+        if (saveBtn) {
+            saveBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                saveLocationConfigs(location, configs);
+            });
         }
+        
+        const qrContainer = wrapper.querySelector('.qr-grid');
+        for (let i = 0; i < configs.length; i++) {
+            const c = configs[i];
+            const qrId = `loc-qr-${Date.now()}-${i}-${Math.random().toString(36).substr(2, 4)}`;
+            const latencyDisplay = (c.latency === 999 || c.latency === -1) ? 'نامشخص' : `${c.latency}ms`;
+            const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`;
+            const medalColor = i === 0 ? '#f9e2af' : i === 1 ? '#cba6f7' : i === 2 ? '#fab387' : '#89b4fa';
+            
+            const card = document.createElement('div');
+            card.className = 'qr-card';
+            card.innerHTML = `
+                <h3 style="color: ${medalColor};">${medal} ${escapeHtml(c.name)} (${c.type})</h3>
+                <p>📍 ${c.host}:${c.port}</p>
+                <p>⚡ تاخیر: ${latencyDisplay}</p>
+                <p>🗺️ ${c.location}</p>
+                <div class="qr-code" id="${qrId}"></div>
+                <button class="btn btn-primary" onclick="copyConfig('${escapeHtml(c.config).replace(/'/g, "\\'")}')">📋 کپی کانفیگ</button>
+                <p style="font-size:0.65em; margin-top:10px; word-break:break-all; color:#a6adc8;">${c.config.substring(0, 55)}...</p>
+            `;
+            qrContainer.appendChild(card);
+            
+            // استفاده از setTimeout به جای requestAnimationFrame
+            setTimeout(() => {
+                createQRCode(qrId, c.config);
+            }, 100);
+        }
+        grid.appendChild(wrapper);
+    }
+}
         
         function toggleLocationGroup(groupId) {
             const el = document.getElementById(groupId);
@@ -1155,41 +1163,44 @@ function createQRCode(elementId, text) {
             }
         }
 
-        // ==================== 10 کانفیگ برتر ====================
-        function refreshTop10() {
-            const grid = document.getElementById('top10Grid');
-            if (!grid) return;
-            grid.innerHTML = '';
-            
-            if (!activeConfigs.length) {
-                grid.innerHTML = '<div style="text-align:center; padding:40px;">⚠️ هنوز کانفیگ ۱۰۰٪ تضمینی وجود ندارد! لطفاً ابتدا تست واقعی را انجام دهید.</div>';
-                return;
-            }
-            
-            const top10 = activeConfigs.slice(0, 10);
-            
-            for (let i = 0; i < top10.length; i++) {
-                const c = top10[i];
-                const qrId = `top10-qr-${Date.now()}-${i}-${Math.random().toString(36).substr(2, 4)}`;
-                const latencyDisplay = (c.latency === 999 || c.latency === -1) ? 'نامشخص' : `${c.latency}ms`;
-                const rank = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}️⃣`;
-                const rankColor = i === 0 ? '#f9e2af' : i === 1 ? '#cba6f7' : i === 2 ? '#fab387' : '#89b4fa';
-                
-                const card = document.createElement('div');
-                card.className = 'qr-card';
-                card.innerHTML = `
-                    <h3 style="color: ${rankColor};">${rank} ${escapeHtml(c.name)} (${c.type})</h3>
-                    <p>📍 ${c.host}:${c.port}</p>
-                    <p>⚡ تاخیر: ${latencyDisplay}</p>
-                    <p>🗺️ ${c.location || '🌍 نامشخص'}</p>
-                    <div class="qr-code" id="${qrId}"></div>
-                    <button class="btn btn-primary" onclick="copyConfig('${escapeHtml(c.config).replace(/'/g, "\\'")}')">📋 کپی کانفیگ</button>
-                    <p style="font-size:0.65em; margin-top:10px; word-break:break-all; color:#a6adc8;">${c.config.substring(0, 55)}...</p>
-                `;
-                grid.appendChild(card);
-                requestAnimationFrame(() => {     createQRCode(qrId, c.config); });
-            }
-        }
+      // ==================== 10 کانفیگ برتر ====================
+function refreshTop10() {
+    const grid = document.getElementById('top10Grid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    
+    if (!activeConfigs.length) {
+        grid.innerHTML = '<div style="text-align:center; padding:40px;">⚠️ هنوز کانفیگ ۱۰۰٪ تضمینی وجود ندارد! لطفاً ابتدا تست واقعی را انجام دهید.</div>';
+        return;
+    }
+    
+    const top10 = activeConfigs.slice(0, 10);
+    
+    for (let i = 0; i < top10.length; i++) {
+        const c = top10[i];
+        const qrId = `top10-qr-${Date.now()}-${i}-${Math.random().toString(36).substr(2, 4)}`;
+        const latencyDisplay = (c.latency === 999 || c.latency === -1) ? 'نامشخص' : `${c.latency}ms`;
+        const rank = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}️⃣`;
+        const rankColor = i === 0 ? '#f9e2af' : i === 1 ? '#cba6f7' : i === 2 ? '#fab387' : '#89b4fa';
+        
+        const card = document.createElement('div');
+        card.className = 'qr-card';
+        card.innerHTML = `
+            <h3 style="color: ${rankColor};">${rank} ${escapeHtml(c.name)} (${c.type})</h3>
+            <p>📍 ${c.host}:${c.port}</p>
+            <p>⚡ تاخیر: ${latencyDisplay}</p>
+            <p>🗺️ ${c.location || '🌍 نامشخص'}</p>
+            <div class="qr-code" id="${qrId}"></div>
+            <button class="btn btn-primary" onclick="copyConfig('${escapeHtml(c.config).replace(/'/g, "\\'")}')">📋 کپی کانفیگ</button>
+            <p style="font-size:0.65em; margin-top:10px; word-break:break-all; color:#a6adc8;">${c.config.substring(0, 55)}...</p>
+        `;
+        grid.appendChild(card);
+        
+        setTimeout(() => {
+            createQRCode(qrId, c.config);
+        }, 100);
+    }
+}
 
         function copyConfig(config) {
             navigator.clipboard.writeText(config).then(() => {
