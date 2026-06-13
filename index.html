@@ -184,13 +184,12 @@
         }
         .location-header {
             background: #313244;
-            padding: 14px 20px;
+            padding: 12px 20px;
             font-weight: bold;
             cursor: pointer;
             display: flex;
             align-items: center;
             gap: 12px;
-            transition: all 0.2s ease;
         }
         .location-header:hover { background: #45475a; }
         .location-header .count {
@@ -199,22 +198,19 @@
             padding: 2px 10px;
             border-radius: 20px;
             font-size: 0.75em;
-            font-weight: bold;
         }
-        .location-header .arrow { margin-right: auto; font-size: 0.8em; }
+        .location-header .arrow { margin-right: auto; }
         .location-configs { display: block; padding: 15px; }
         .location-configs.collapsed { display: none; }
         
-        .qr-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)); gap: 15px; }
+        .qr-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; }
         .qr-card {
             background: #1e1e2e;
             border-radius: 14px;
             padding: 15px;
             text-align: center;
             border: 1px solid #313244;
-            transition: transform 0.2s;
         }
-        .qr-card:hover { transform: translateY(-3px); border-color: #89b4fa; }
         .qr-code { background: white; padding: 10px; border-radius: 12px; display: inline-block; margin: 10px 0; }
         .qr-code canvas { width: 110px; height: 110px; }
         textarea {
@@ -341,9 +337,9 @@
             <div class="settings-section">
                 <h3>🔢 حداکثر تعداد کانفیگ</h3>
                 <select id="maxConfigs">
-                    <option value="100">۱۰۰</option>
-                    <option value="500" selected>۵۰۰</option>
-                    <option value="1000">۱۰۰۰</option>
+                    <option value="100">۱۰۰ (سریع)</option>
+                    <option value="500" selected>۵۰۰ (پیش‌فرض)</option>
+                    <option value="1000">۱۰۰۰ (کامل)</option>
                 </select>
             </div>
             <div class="settings-section">
@@ -354,7 +350,7 @@
                     <option value="30000">۳۰ ثانیه</option>
                 </select>
             </div>
-            <button class="save-settings" onclick="saveSettings()">💾 ذخیره تنظیمات</button>
+            <button class="save-settings" id="saveSettingsBtn">💾 ذخیره تنظیمات</button>
         </div>
     </div>
 
@@ -392,7 +388,7 @@
             "https://raw.githubusercontent.com/barry-far/V2ray-config/main/Sub8.txt"
         ];
 
-        // نقشه کشورها
+        // نقشه کشورها با پرچم
         const countryMap = {
             'United States': '🇺🇸 آمریکا', 'Germany': '🇩🇪 آلمان', 'Netherlands': '🇳🇱 هلند',
             'France': '🇫🇷 فرانسه', 'United Kingdom': '🇬🇧 انگلستان', 'Canada': '🇨🇦 کانادا',
@@ -402,15 +398,20 @@
             'Poland': '🇵🇱 لهستان', 'Turkey': '🇹🇷 ترکیه', 'Iran': '🇮🇷 ایران',
             'UAE': '🇦🇪 امارات', 'Hong Kong': '🇭🇰 هنگ‌کنگ', 'South Korea': '🇰🇷 کره جنوبی',
             'Brazil': '🇧🇷 برزیل', 'Switzerland': '🇨🇭 سوئیس', 'Italy': '🇮🇹 ایتالیا',
-            'Spain': '🇪🇸 اسپانیا'
+            'Spain': '🇪🇸 اسپانیا', 'Vietnam': '🇻🇳 ویتنام', 'Malaysia': '🇲🇾 مالزی'
         };
 
-        // دریافت لوکیشن با API پایدار
+        // دریافت لوکیشن از روی IP
         async function getLocation(host) {
             if (locationCache.has(host)) return locationCache.get(host);
             
+            // اگر IP لوکال بود یا private بود
+            if (host.startsWith('10.') || host.startsWith('172.') || host.startsWith('192.168.') || host === 'localhost' || host === '127.0.0.1') {
+                locationCache.set(host, '🏠 محلی');
+                return '🏠 محلی';
+            }
+            
             try {
-                // استفاده از ipwhois.app (پایدارتر)
                 const res = await fetch(`https://ipwhois.app/json/${host}?fields=country,country_code`, { signal: AbortSignal.timeout(4000) });
                 const data = await res.json();
                 if (data.country) {
@@ -421,15 +422,24 @@
             } catch(e) {}
             
             try {
-                // API پشتیبان
                 const res = await fetch(`https://ipapi.co/${host}/country/`, { signal: AbortSignal.timeout(3000) });
                 const country = await res.text();
-                if (country && country.length > 2) {
+                if (country && country.length > 2 && country !== 'None') {
                     let display = countryMap[country] || `🌍 ${country}`;
                     locationCache.set(host, display);
                     return display;
                 }
             } catch(e) {}
+            
+            // اگر هیچ API جواب نداد، بر اساس host حدس بزن
+            if (host.includes('amazon') || host.includes('aws')) {
+                locationCache.set(host, '☁️ ابری');
+                return '☁️ ابری';
+            }
+            if (host.includes('cloudflare')) {
+                locationCache.set(host, '🌐 کلودفلر');
+                return '🌐 کلودفلر';
+            }
             
             locationCache.set(host, '🌍 نامشخص');
             return '🌍 نامشخص';
@@ -548,6 +558,7 @@
                             return false;
                         });
                         allConfigs.push(...lines);
+                        addLog(`📥 ${lines.length} کانفیگ دریافت شد`, 'info');
                     }
                 } catch(e) {}
                 if (allConfigs.length >= settings.maxConfigs) break;
@@ -561,7 +572,7 @@
                 return;
             }
             
-            addLog(`🔍 ${allConfigs.length} کانفیگ - شروع تست`, 'info');
+            addLog(`🔍 ${allConfigs.length} کانفیگ - شروع تست همزمان`, 'info');
             
             let completed = 0;
             const total = allConfigs.length;
@@ -739,6 +750,7 @@
         }
 
         function copyConfig(c) { navigator.clipboard.writeText(c); alert('✅ کپی شد!'); }
+        
         function saveConfigs() {
             if (!activeConfigs.length) { alert('کانفیگی نیست'); return; }
             let txt = `# V2Ray Configs\n# تاریخ: ${new Date().toLocaleString()}\n# تعداد: ${activeConfigs.length}\n\n`;
@@ -748,9 +760,11 @@
             a.download = `v2ray_${new Date().toISOString().slice(0,19)}.txt`;
             a.click();
             URL.revokeObjectURL(a.href);
+            updateStatus('💾 کانفیگ‌ها ذخیره شدند');
         }
         
         function clearManual() { document.getElementById('manualConfig').value = ''; document.getElementById('manualResult').innerHTML = ''; }
+        
         function switchTab(tab) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -794,14 +808,16 @@
             settings.maxLatency = parseInt(document.getElementById('maxLatency').value);
             API_URL = document.getElementById('apiUrl').value;
             localStorage.setItem('v2ray_settings', JSON.stringify(settings));
-            closeSettings();
             updateStatus('✅ تنظیمات ذخیره شد');
+            // بستن مودال
+            document.getElementById('settingsModal').classList.remove('active');
         }
         
         function openSettings() { document.getElementById('settingsModal').classList.add('active'); }
         function closeSettings() { document.getElementById('settingsModal').classList.remove('active'); }
         
         document.getElementById('autoTestBtn').onclick = startAutoTest;
+        document.getElementById('saveSettingsBtn').onclick = saveSettings;
         loadSettings();
         setTimeout(() => checkAndWakeServer(false), 1000);
         
