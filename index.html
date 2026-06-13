@@ -398,51 +398,52 @@
             'Poland': '🇵🇱 لهستان', 'Turkey': '🇹🇷 ترکیه', 'Iran': '🇮🇷 ایران',
             'UAE': '🇦🇪 امارات', 'Hong Kong': '🇭🇰 هنگ‌کنگ', 'South Korea': '🇰🇷 کره جنوبی',
             'Brazil': '🇧🇷 برزیل', 'Switzerland': '🇨🇭 سوئیس', 'Italy': '🇮🇹 ایتالیا',
-            'Spain': '🇪🇸 اسپانیا', 'Vietnam': '🇻🇳 ویتنام', 'Malaysia': '🇲🇾 مالزی'
+            'Spain': '🇪🇸 اسپانیا'
         };
 
-        // دریافت لوکیشن از روی IP
+        // دریافت لوکیشن - بدون API خارجی (فقط از کش و حدس استفاده کن)
         async function getLocation(host) {
             if (locationCache.has(host)) return locationCache.get(host);
             
-            // اگر IP لوکال بود یا private بود
-            if (host.startsWith('10.') || host.startsWith('172.') || host.startsWith('192.168.') || host === 'localhost' || host === '127.0.0.1') {
-                locationCache.set(host, '🏠 محلی');
-                return '🏠 محلی';
+            // حدس زدن بر اساس پسوند دامنه
+            let display = '🌍 نامشخص';
+            
+            if (host.includes('.ir') || host.includes('iran') || host.includes('tehran')) {
+                display = '🇮🇷 ایران';
+            } else if (host.includes('.us') || host.includes('usa') || host.includes('unitedstates')) {
+                display = '🇺🇸 آمریکا';
+            } else if (host.includes('.de') || host.includes('germany') || host.includes('frankfurt')) {
+                display = '🇩🇪 آلمان';
+            } else if (host.includes('.nl') || host.includes('netherlands') || host.includes('amsterdam')) {
+                display = '🇳🇱 هلند';
+            } else if (host.includes('.fr') || host.includes('france') || host.includes('paris')) {
+                display = '🇫🇷 فرانسه';
+            } else if (host.includes('.uk') || host.includes('.gb') || host.includes('london')) {
+                display = '🇬🇧 انگلستان';
+            } else if (host.includes('.ca') || host.includes('canada') || host.includes('toronto')) {
+                display = '🇨🇦 کانادا';
+            } else if (host.includes('.jp') || host.includes('japan') || host.includes('tokyo')) {
+                display = '🇯🇵 ژاپن';
+            } else if (host.includes('.sg') || host.includes('singapore')) {
+                display = '🇸🇬 سنگاپور';
+            } else if (host.includes('.ru') || host.includes('russia') || host.includes('moscow')) {
+                display = '🇷🇺 روسیه';
+            } else if (host.includes('.tr') || host.includes('turkey') || host.includes('istanbul')) {
+                display = '🇹🇷 ترکیه';
+            } else if (host.includes('cloudflare') || host.includes('cdn')) {
+                display = '☁️ کلودفلر';
+            } else if (host.includes('amazon') || host.includes('aws')) {
+                display = '☁️ آمازون';
+            } else if (host.includes('google') || host.includes('gcp')) {
+                display = '🔵 گوگل';
+            } else if (host.includes('microsoft') || host.includes('azure')) {
+                display = '📘 مایکروسافت';
+            } else if (host.includes('ovh') || host.includes('vps')) {
+                display = '🖥️ VPS';
             }
             
-            try {
-                const res = await fetch(`https://ipwhois.app/json/${host}?fields=country,country_code`, { signal: AbortSignal.timeout(4000) });
-                const data = await res.json();
-                if (data.country) {
-                    let display = countryMap[data.country] || `🌍 ${data.country}`;
-                    locationCache.set(host, display);
-                    return display;
-                }
-            } catch(e) {}
-            
-            try {
-                const res = await fetch(`https://ipapi.co/${host}/country/`, { signal: AbortSignal.timeout(3000) });
-                const country = await res.text();
-                if (country && country.length > 2 && country !== 'None') {
-                    let display = countryMap[country] || `🌍 ${country}`;
-                    locationCache.set(host, display);
-                    return display;
-                }
-            } catch(e) {}
-            
-            // اگر هیچ API جواب نداد، بر اساس host حدس بزن
-            if (host.includes('amazon') || host.includes('aws')) {
-                locationCache.set(host, '☁️ ابری');
-                return '☁️ ابری';
-            }
-            if (host.includes('cloudflare')) {
-                locationCache.set(host, '🌐 کلودفلر');
-                return '🌐 کلودفلر';
-            }
-            
-            locationCache.set(host, '🌍 نامشخص');
-            return '🌍 نامشخص';
+            locationCache.set(host, display);
+            return display;
         }
 
         async function fetchWithTimeout(url, options = {}, timeout = 15000) {
@@ -790,34 +791,60 @@
                     if (p.apiUrl) API_URL = p.apiUrl;
                 } catch(e) {}
             }
-            document.getElementById('protoVmess').checked = settings.protocols.vmess;
-            document.getElementById('ProtoVless').checked = settings.protocols.vless;
-            document.getElementById('protoTrojan').checked = settings.protocols.trojan;
-            document.getElementById('apiUrl').value = API_URL;
-            document.getElementById('maxConfigs').value = settings.maxConfigs;
-            document.getElementById('maxLatency').value = settings.maxLatency;
+            // اصلاح نام id ها - حتما با id های HTML مطابقت داشته باشد
+            const vmessCheck = document.getElementById('protoVmess');
+            const vlessCheck = document.getElementById('protoVless');
+            const trojanCheck = document.getElementById('protoTrojan');
+            if (vmessCheck) vmessCheck.checked = settings.protocols.vmess;
+            if (vlessCheck) vlessCheck.checked = settings.protocols.vless;
+            if (trojanCheck) trojanCheck.checked = settings.protocols.trojan;
+            const apiUrlInput = document.getElementById('apiUrl');
+            if (apiUrlInput) apiUrlInput.value = API_URL;
+            const maxConfigsSelect = document.getElementById('maxConfigs');
+            if (maxConfigsSelect) maxConfigsSelect.value = settings.maxConfigs;
+            const maxLatencySelect = document.getElementById('maxLatency');
+            if (maxLatencySelect) maxLatencySelect.value = settings.maxLatency;
         }
         
         function saveSettings() {
-            settings.protocols = {
-                vmess: document.getElementById('protoVmess').checked,
-                vless: document.getElementById('ProtoVless').checked,
-                trojan: document.getElementById('protoTrojan').checked
-            };
-            settings.maxConfigs = parseInt(document.getElementById('maxConfigs').value);
-            settings.maxLatency = parseInt(document.getElementById('maxLatency').value);
-            API_URL = document.getElementById('apiUrl').value;
-            localStorage.setItem('v2ray_settings', JSON.stringify(settings));
-            updateStatus('✅ تنظیمات ذخیره شد');
-            // بستن مودال
-            document.getElementById('settingsModal').classList.remove('active');
+            try {
+                const vmessCheck = document.getElementById('protoVmess');
+                const vlessCheck = document.getElementById('protoVless');
+                const trojanCheck = document.getElementById('protoTrojan');
+                const apiUrlInput = document.getElementById('apiUrl');
+                const maxConfigsSelect = document.getElementById('maxConfigs');
+                const maxLatencySelect = document.getElementById('maxLatency');
+                
+                if (vmessCheck) settings.protocols.vmess = vmessCheck.checked;
+                if (vlessCheck) settings.protocols.vless = vlessCheck.checked;
+                if (trojanCheck) settings.protocols.trojan = trojanCheck.checked;
+                if (maxConfigsSelect) settings.maxConfigs = parseInt(maxConfigsSelect.value);
+                if (maxLatencySelect) settings.maxLatency = parseInt(maxLatencySelect.value);
+                if (apiUrlInput) API_URL = apiUrlInput.value;
+                
+                localStorage.setItem('v2ray_settings', JSON.stringify(settings));
+                updateStatus('✅ تنظیمات ذخیره شد');
+                // بستن مودال
+                const modal = document.getElementById('settingsModal');
+                if (modal) modal.classList.remove('active');
+            } catch(e) {
+                console.error('خطا در ذخیره تنظیمات:', e);
+                updateStatus('❌ خطا در ذخیره تنظیمات');
+            }
         }
         
-        function openSettings() { document.getElementById('settingsModal').classList.add('active'); }
-        function closeSettings() { document.getElementById('settingsModal').classList.remove('active'); }
+        function openSettings() { 
+            const modal = document.getElementById('settingsModal');
+            if (modal) modal.classList.add('active');
+        }
+        function closeSettings() { 
+            const modal = document.getElementById('settingsModal');
+            if (modal) modal.classList.remove('active');
+        }
         
         document.getElementById('autoTestBtn').onclick = startAutoTest;
-        document.getElementById('saveSettingsBtn').onclick = saveSettings;
+        const saveBtn = document.getElementById('saveSettingsBtn');
+        if (saveBtn) saveBtn.onclick = saveSettings;
         loadSettings();
         setTimeout(() => checkAndWakeServer(false), 1000);
         
