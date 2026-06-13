@@ -385,7 +385,7 @@
                     <option value="30000">۳۰ ثانیه</option>
                 </select>
             </div>
-            <button class="save-settings" onclick="saveSettings()">💾 ذخیره تنظیمات</button>
+            <button class="save-settings" id="saveSettingsBtn">💾 ذخیره تنظیمات</button>
         </div>
     </div>
 
@@ -460,26 +460,21 @@
             return `🌍 ${countryName}`;
         }
 
-        // تابع کمکی برای ایجاد وقفه بین درخواست‌ها (برای جلوگیری از Rate Limit)
         const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-        // ==================== تابع لوکیشن اصلاح شده (بر اساس راهنمای شما) ====================
+        // ==================== تابع لوکیشن ====================
         async function getLocationForHost(host) {
             if (locationCache.has(host)) return locationCache.get(host);
             
-            // شناسایی IP های داخلی و لوکال
             if (host === 'localhost' || host === '127.0.0.1' || host.startsWith('192.168.') || host.startsWith('10.')) {
                 locationCache.set(host, '🏠 محلی');
                 return '🏠 محلی';
             }
             
             try {
-                // ایجاد وقفه 300 میلی‌ثانیه برای جلوگیری از مسدود شدن IP
                 await sleep(300);
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 8000);
-                
-                // استفاده از ipwho.is که برای کلاینت‌ساید بهینه‌تر و رایگان است
                 const response = await fetch(`https://ipwho.is/${host}`, { signal: controller.signal });
                 clearTimeout(timeoutId);
                 
@@ -495,7 +490,6 @@
                 console.warn(`Geolocation fetch failed for ${host}:`, e.message);
             }
             
-            // Fallback: حدس دقیق‌تر بر اساس پسوند دامنه (با استفاده از رجکس)
             let guess = '🌍 نامشخص';
             const h = host.toLowerCase();
             
@@ -574,7 +568,7 @@
 
         function closeServerStatusModal() { document.getElementById('serverStatusModal').classList.remove('active'); }
 
-        // ==================== تابع parseConfig اصلاح شده با پشتیبانی از IPv6 ====================
+        // تابع parseConfig با پشتیبانی از IPv6
         function parseConfig(config) {
             try {
                 if (config.startsWith('vmess://')) {
@@ -583,11 +577,9 @@
                     let obj = JSON.parse(atob(b64));
                     return { host: obj.add, port: obj.port, name: obj.ps || 'VMess', type: 'vmess' };
                 } else if (config.startsWith('vless://')) {
-                    // پشتیبانی همزمان از دامین، IPv4 و IPv6
                     let match = config.match(/@(\[[a-fA-F0-9:]+\]|[^:]+):(\d+)/);
                     if (match) return { host: match[1], port: match[2], name: 'VLESS', type: 'vless' };
                 } else if (config.startsWith('trojan://')) {
-                    // پشتیبانی همزمان از دامین، IPv4 و IPv6
                     let match = config.match(/@(\[[a-fA-F0-9:]+\]|[^:]+):(\d+)/);
                     if (match) return { host: match[1], port: match[2], name: 'Trojan', type: 'trojan' };
                 }
@@ -773,7 +765,6 @@
                 return;
             }
             
-            // گروه‌بندی بر اساس لوکیشن
             const groups = new Map();
             for (const cfg of activeConfigs) {
                 const loc = cfg.location || '🌍 نامشخص';
@@ -942,6 +933,7 @@
             }
         }
         
+        // ==================== تنظیمات ====================
         function loadSettings() {
             const saved = localStorage.getItem('v2ray_settings');
             if (saved) {
@@ -951,32 +943,63 @@
                     if (p.apiUrl) API_URL = p.apiUrl;
                 } catch(e) {}
             }
-            document.getElementById('protoVmess').checked = settings.protocols.vmess;
-            document.getElementById('protoVless').checked = settings.protocols.vless;
-            document.getElementById('protoTrojan').checked = settings.protocols.trojan;
-            document.getElementById('apiUrl').value = API_URL;
-            document.getElementById('maxConfigs').value = settings.maxConfigs;
-            document.getElementById('maxLatency').value = settings.maxLatency;
+            // اصلاح: حتما با id های HTML مطابقت داشته باشد
+            const vmessCheck = document.getElementById('protoVmess');
+            const vlessCheck = document.getElementById('protoVless');
+            const trojanCheck = document.getElementById('protoTrojan');
+            const apiInput = document.getElementById('apiUrl');
+            const maxSelect = document.getElementById('maxConfigs');
+            const latencySelect = document.getElementById('maxLatency');
+            
+            if (vmessCheck) vmessCheck.checked = settings.protocols.vmess;
+            if (vlessCheck) vlessCheck.checked = settings.protocols.vless;
+            if (trojanCheck) trojanCheck.checked = settings.protocols.trojan;
+            if (apiInput) apiInput.value = API_URL;
+            if (maxSelect) maxSelect.value = settings.maxConfigs;
+            if (latencySelect) latencySelect.value = settings.maxLatency;
         }
         
         function saveSettings() {
-            settings.protocols = {
-                vmess: document.getElementById('protoVmess').checked,
-                vless: document.getElementById('protoVless').checked,
-                trojan: document.getElementById('protoTrojan').checked
-            };
-            settings.maxConfigs = parseInt(document.getElementById('maxConfigs').value);
-            settings.maxLatency = parseInt(document.getElementById('maxLatency').value);
-            API_URL = document.getElementById('apiUrl').value;
-            localStorage.setItem('v2ray_settings', JSON.stringify(settings));
-            closeSettings();
-            updateStatus('✅ تنظیمات ذخیره شد!');
+            try {
+                const vmessCheck = document.getElementById('protoVmess');
+                const vlessCheck = document.getElementById('protoVless');
+                const trojanCheck = document.getElementById('protoTrojan');
+                const apiInput = document.getElementById('apiUrl');
+                const maxSelect = document.getElementById('maxConfigs');
+                const latencySelect = document.getElementById('maxLatency');
+                
+                if (vmessCheck) settings.protocols.vmess = vmessCheck.checked;
+                if (vlessCheck) settings.protocols.vless = vlessCheck.checked;
+                if (trojanCheck) settings.protocols.trojan = trojanCheck.checked;
+                if (maxSelect) settings.maxConfigs = parseInt(maxSelect.value);
+                if (latencySelect) settings.maxLatency = parseInt(latencySelect.value);
+                if (apiInput) API_URL = apiInput.value;
+                
+                localStorage.setItem('v2ray_settings', JSON.stringify(settings));
+                updateStatus('✅ تنظیمات ذخیره شد!');
+                // بستن مودال
+                const modal = document.getElementById('settingsModal');
+                if (modal) modal.classList.remove('active');
+            } catch(e) {
+                console.error('خطا در ذخیره تنظیمات:', e);
+                updateStatus('❌ خطا در ذخیره تنظیمات');
+            }
         }
         
-        function openSettings() { document.getElementById('settingsModal').classList.add('active'); }
-        function closeSettings() { document.getElementById('settingsModal').classList.remove('active'); }
+        function openSettings() { 
+            const modal = document.getElementById('settingsModal');
+            if (modal) modal.classList.add('active');
+        }
+        function closeSettings() { 
+            const modal = document.getElementById('settingsModal');
+            if (modal) modal.classList.remove('active');
+        }
         
         document.getElementById('autoTestBtn').onclick = startAutoTest;
+        // اتصال دکمه ذخیره تنظیمات
+        const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+        if (saveSettingsBtn) saveSettingsBtn.onclick = saveSettings;
+        
         loadSettings();
         setTimeout(() => checkAndWakeServer(false), 1000);
         
