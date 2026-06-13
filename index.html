@@ -168,6 +168,7 @@
         .btn-success { background: #a6e3a1; color: #1e1e2e; }
         .btn-danger { background: #f38ba8; color: #1e1e2e; }
         .btn-warning { background: #fab387; color: #1e1e2e; }
+        .btn-sm { padding: 6px 12px; font-size: 0.8em; }
         .btn:hover { transform: translateY(-2px); filter: brightness(1.05); }
         .progress-bar { width: 100%; height: 8px; background: #45475a; border-radius: 10px; overflow: hidden; margin: 15px 0; }
         .progress-fill { width: 0%; height: 100%; background: linear-gradient(90deg, #89b4fa, #74c7ec); transition: width 0.3s ease; }
@@ -200,6 +201,7 @@
             display: flex;
             align-items: center;
             gap: 12px;
+            flex-wrap: wrap;
         }
         .location-header:hover { background: #45475a; }
         .location-header .count {
@@ -209,7 +211,17 @@
             border-radius: 20px;
             font-size: 0.75em;
         }
-        .location-header .arrow { margin-right: auto; }
+        .location-header .arrow { margin-right: auto; font-size: 1.2em; }
+        .location-header .save-location-btn {
+            background: #a6e3a1;
+            color: #1e1e2e;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 12px;
+            font-size: 0.7em;
+            cursor: pointer;
+        }
+        .location-header .save-location-btn:hover { background: #89b4fa; transform: scale(1.02); }
         .location-configs { display: block; padding: 15px; }
         .location-configs.collapsed { display: none; }
         
@@ -265,6 +277,7 @@
             .tab-btn { padding: 10px; font-size: 0.85em; }
             .qr-grid { grid-template-columns: 1fr; }
             .settings-btn { bottom: 15px; right: 15px; width: 50px; height: 50px; font-size: 24px; }
+            .location-header { flex-wrap: wrap; }
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
@@ -445,10 +458,10 @@
             "https://raw.githubusercontent.com/barry-far/V2ray-config/main/Sub8.txt"
         ];
 
-        // دیکشنری لوکیشن با پرچم
+        // دیکشنری لوکیشن با پرچم (گسترده شده برای تشخیص بهتر)
         const countryFlags = {
             'United States': '🇺🇸', 'US': '🇺🇸', 'USA': '🇺🇸', 'America': '🇺🇸',
-            'Germany': '🇩🇪', 'DE': '🇩🇪', 'Germany DE': '🇩🇪',
+            'Germany': '🇩🇪', 'DE': '🇩🇪',
             'Netherlands': '🇳🇱', 'NL': '🇳🇱',
             'France': '🇫🇷', 'FR': '🇫🇷',
             'United Kingdom': '🇬🇧', 'UK': '🇬🇧', 'GB': '🇬🇧', 'England': '🇬🇧',
@@ -469,53 +482,86 @@
             'Hong Kong': '🇭🇰', 'HK': '🇭🇰',
             'South Korea': '🇰🇷', 'KR': '🇰🇷',
             'Brazil': '🇧🇷', 'BR': '🇧🇷',
-            'Switzerland': '🇨🇭', 'CH': '🇨🇭'
+            'Switzerland': '🇨🇭', 'CH': '🇨🇭',
+            'Italy': '🇮🇹', 'IT': '🇮🇹',
+            'Spain': '🇪🇸', 'ES': '🇪🇸',
+            'Israel': '🇮🇱', 'IL': '🇮🇱',
+            'South Africa': '🇿🇦', 'ZA': '🇿🇦'
+        };
+
+        const persianNames = {
+            'United States': 'آمریکا', 'Germany': 'آلمان', 'Netherlands': 'هلند',
+            'France': 'فرانسه', 'United Kingdom': 'انگلستان', 'Canada': 'کانادا',
+            'Japan': 'ژاپن', 'Singapore': 'سنگاپور', 'Russia': 'روسیه',
+            'India': 'هند', 'Australia': 'استرالیا', 'Finland': 'فنلاند',
+            'Sweden': 'سوئد', 'Norway': 'نروژ', 'Denmark': 'دانمارک',
+            'Poland': 'لهستان', 'Turkey': 'ترکیه', 'Iran': 'ایران',
+            'UAE': 'امارات', 'Hong Kong': 'هنگ‌کنگ', 'South Korea': 'کره جنوبی',
+            'Brazil': 'برزیل', 'Switzerland': 'سوئیس', 'Italy': 'ایتالیا',
+            'Spain': 'اسپانیا', 'Israel': 'اسرائیل', 'South Africa': 'آفریقای جنوبی'
         };
 
         function getLocationDisplay(country) {
             if (!country) return '🌍 نامشخص';
             const flag = countryFlags[country] || '🌍';
-            const persianNames = {
-                'United States': 'آمریکا', 'Germany': 'آلمان', 'Netherlands': 'هلند',
-                'France': 'فرانسه', 'United Kingdom': 'انگلستان', 'Canada': 'کانادا',
-                'Japan': 'ژاپن', 'Singapore': 'سنگاپور', 'Russia': 'روسیه',
-                'India': 'هند', 'Australia': 'استرالیا', 'Finland': 'فنلاند',
-                'Sweden': 'سوئد', 'Norway': 'نروژ', 'Denmark': 'دانمارک',
-                'Poland': 'لهستان', 'Turkey': 'ترکیه', 'Iran': 'ایران',
-                'UAE': 'امارات', 'Hong Kong': 'هنگ‌کنگ', 'South Korea': 'کره جنوبی',
-                'Brazil': 'برزیل', 'Switzerland': 'سوئیس'
-            };
             const persian = persianNames[country] || country;
             return `${flag} ${persian}`;
         }
 
-        // دریافت لوکیشن از IP (با کش و fallback)
+        // دریافت لوکیشن از IP با چندین API پشتیبان
         async function getLocationForHost(host) {
             if (locationCache.has(host)) return locationCache.get(host);
             
-            try {
-                const res = await fetch(`https://ipapi.co/${host}/country/`, { signal: AbortSignal.timeout(3000) });
-                const country = await res.text();
-                if (country && country.length > 2 && country !== 'None') {
-                    const display = getLocationDisplay(country);
-                    locationCache.set(host, display);
-                    return display;
+            // لیست API های پشتیبان
+            const apis = [
+                async () => {
+                    const res = await fetch(`https://ipapi.co/${host}/country/`, { signal: AbortSignal.timeout(3000) });
+                    const country = await res.text();
+                    if (country && country.length > 2 && country !== 'None') return country;
+                    return null;
+                },
+                async () => {
+                    const res = await fetch(`https://ipwhois.app/json/${host}?fields=country`, { signal: AbortSignal.timeout(3000) });
+                    const data = await res.json();
+                    if (data.country) return data.country;
+                    return null;
+                },
+                async () => {
+                    const res = await fetch(`https://freeipapi.com/api/json/${host}`, { signal: AbortSignal.timeout(3000) });
+                    const data = await res.json();
+                    if (data.countryName) return data.countryName;
+                    return null;
                 }
-            } catch(e) {}
+            ];
             
-            // Fallback: حدس بر اساس پسوند دامنه
+            for (const api of apis) {
+                try {
+                    const country = await api();
+                    if (country) {
+                        const display = getLocationDisplay(country);
+                        locationCache.set(host, display);
+                        return display;
+                    }
+                } catch(e) { continue; }
+            }
+            
+            // Fallback: حدس بر اساس پسوند دامنه و نام
             let guess = '🌍 نامشخص';
-            if (host.includes('.ir')) guess = '🇮🇷 ایران';
-            else if (host.includes('.us')) guess = '🇺🇸 آمریکا';
-            else if (host.includes('.de')) guess = '🇩🇪 آلمان';
-            else if (host.includes('.nl')) guess = '🇳🇱 هلند';
-            else if (host.includes('.fr')) guess = '🇫🇷 فرانسه';
-            else if (host.includes('.uk') || host.includes('.gb')) guess = '🇬🇧 انگلستان';
-            else if (host.includes('.ca')) guess = '🇨🇦 کانادا';
-            else if (host.includes('.jp')) guess = '🇯🇵 ژاپن';
-            else if (host.includes('.sg')) guess = '🇸🇬 سنگاپور';
-            else if (host.includes('.ru')) guess = '🇷🇺 روسیه';
-            else if (host.includes('.tr')) guess = '🇹🇷 ترکیه';
+            const h = host.toLowerCase();
+            if (h.includes('.ir') || h.includes('iran')) guess = '🇮🇷 ایران';
+            else if (h.includes('.us') || h.includes('usa') || h.includes('unitedstates')) guess = '🇺🇸 آمریکا';
+            else if (h.includes('.de') || h.includes('germany') || h.includes('frankfurt')) guess = '🇩🇪 آلمان';
+            else if (h.includes('.nl') || h.includes('netherlands') || h.includes('amsterdam')) guess = '🇳🇱 هلند';
+            else if (h.includes('.fr') || h.includes('france') || h.includes('paris')) guess = '🇫🇷 فرانسه';
+            else if (h.includes('.uk') || h.includes('.gb') || h.includes('london')) guess = '🇬🇧 انگلستان';
+            else if (h.includes('.ca') || h.includes('canada')) guess = '🇨🇦 کانادا';
+            else if (h.includes('.jp') || h.includes('japan') || h.includes('tokyo')) guess = '🇯🇵 ژاپن';
+            else if (h.includes('.sg') || h.includes('singapore')) guess = '🇸🇬 سنگاپور';
+            else if (h.includes('.ru') || h.includes('russia') || h.includes('moscow')) guess = '🇷🇺 روسیه';
+            else if (h.includes('.tr') || h.includes('turkey') || h.includes('istanbul')) guess = '🇹🇷 ترکیه';
+            else if (h.includes('cloudflare')) guess = '☁️ کلودفلر';
+            else if (h.includes('amazon') || h.includes('aws')) guess = '☁️ آمازون';
+            else if (h.includes('google') || h.includes('gcp')) guess = '🔵 گوگل';
             
             locationCache.set(host, guess);
             return guess;
@@ -990,7 +1036,34 @@
             });
         }
 
-        // ==================== دسته‌بندی لوکیشن ====================
+        // ==================== ذخیره کانفیگ‌های یک دسته ====================
+        function saveLocationConfigs(location, configs) {
+            if (!configs.length) {
+                alert('هیچ کانفیگی در این دسته وجود ندارد!');
+                return;
+            }
+            
+            let text = `# V2Ray Configs - کانفیگ‌های ${location}\n`;
+            text += `# تاریخ: ${new Date().toLocaleString()}\n`;
+            text += `# تعداد: ${configs.length}\n\n`;
+            
+            configs.forEach((c, i) => {
+                const latencyDisplay = (c.latency === 999 || c.latency === -1) ? 'نامشخص' : `${c.latency}ms`;
+                text += `# ${i+1}. ${c.host}:${c.port} (${c.type}) - ${latencyDisplay} - ${c.name}\n${c.config}\n\n`;
+            });
+            
+            const blob = new Blob([text], { type: 'text/plain' });
+            const a = document.createElement('a');
+            const safeName = location.replace(/[^a-zA-Z0-9\u0600-\u06FF]/g, '_');
+            a.download = `v2ray_${safeName}_${new Date().toISOString().slice(0,19)}.txt`;
+            a.href = URL.createObjectURL(blob);
+            a.click();
+            URL.revokeObjectURL(a.href);
+            
+            updateStatus(`💾 ${configs.length} کانفیگ از ${location} ذخیره شد`);
+        }
+
+        // ==================== دسته‌بندی لوکیشن با دکمه ذخیره ====================
         function refreshLocationGroups() {
             const grid = document.getElementById('locationGrid');
             if (!grid) return;
@@ -1023,6 +1096,7 @@
                         <span>${location}</span>
                         <span class="count">${configs.length} کانفیگ</span>
                         <span class="arrow">▼</span>
+                        <button class="save-location-btn" onclick="event.stopPropagation(); saveLocationConfigs('${location.replace(/'/g, "\\'")}', ${JSON.stringify(configs).replace(/'/g, "\\'")})">💾 ذخیره این دسته</button>
                     </div>
                     <div id="${groupId}" class="location-configs"><div class="qr-grid"></div></div>
                 `;
@@ -1202,6 +1276,7 @@
         
         // توابع گلوبال
         window.toggleLocationGroup = toggleLocationGroup;
+        window.saveLocationConfigs = saveLocationConfigs;
         window.copyConfig = copyConfig;
         window.switchTab = switchTab;
         window.openSettings = openSettings;
