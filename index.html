@@ -360,18 +360,18 @@
             <div class="settings-section">
                 <h3>📡 پروتکل‌های مجاز</h3>
                 <div class="checkbox-group">
-                    <label><input type="checkbox" id="protoVmess" checked> VMess</label>
-                    <label><input type="checkbox" id="protoVless" checked> VLESS</label>
-                    <label><input type="checkbox" id="protoTrojan" checked> Trojan</label>
+                    <label><input type="checkbox" id="chkVmess" checked> VMess</label>
+                    <label><input type="checkbox" id="chkVless" checked> VLESS</label>
+                    <label><input type="checkbox" id="chkTrojan" checked> Trojan</label>
                 </div>
             </div>
             <div class="settings-section">
                 <h3>🌐 آدرس سرور واسط (API)</h3>
-                <input type="text" id="apiUrl" value="https://v2ray-validator.onrender.com">
+                <input type="text" id="txtApiUrl" value="https://v2ray-validator.onrender.com">
             </div>
             <div class="settings-section">
                 <h3>🔢 حداکثر تعداد کانفیگ</h3>
-                <select id="maxConfigs">
+                <select id="selMaxConfigs">
                     <option value="100">۱۰۰</option>
                     <option value="500" selected>۵۰۰</option>
                     <option value="1000">۱۰۰۰</option>
@@ -379,13 +379,13 @@
             </div>
             <div class="settings-section">
                 <h3>⏱️ حداکثر زمان تست</h3>
-                <select id="maxLatency">
+                <select id="selMaxLatency">
                     <option value="5000">۵ ثانیه</option>
                     <option value="10000" selected>۱۰ ثانیه</option>
                     <option value="30000">۳۰ ثانیه</option>
                 </select>
             </div>
-            <button class="save-settings" id="saveSettingsBtn">💾 ذخیره تنظیمات</button>
+            <button class="save-settings" id="btnSaveSettings">💾 ذخیره تنظیمات</button>
         </div>
     </div>
 
@@ -933,7 +933,7 @@
             }
         }
         
-        // ==================== تنظیمات ====================
+        // ==================== تنظیمات - ساده و بدون خطا ====================
         function loadSettings() {
             const saved = localStorage.getItem('v2ray_settings');
             if (saved) {
@@ -943,47 +943,48 @@
                     if (p.apiUrl) API_URL = p.apiUrl;
                 } catch(e) {}
             }
-            // اصلاح: حتما با id های HTML مطابقت داشته باشد
-            const vmessCheck = document.getElementById('protoVmess');
-            const vlessCheck = document.getElementById('protoVless');
-            const trojanCheck = document.getElementById('protoTrojan');
-            const apiInput = document.getElementById('apiUrl');
-            const maxSelect = document.getElementById('maxConfigs');
-            const latencySelect = document.getElementById('maxLatency');
             
-            if (vmessCheck) vmessCheck.checked = settings.protocols.vmess;
-            if (vlessCheck) vlessCheck.checked = settings.protocols.vless;
-            if (trojanCheck) trojanCheck.checked = settings.protocols.trojan;
-            if (apiInput) apiInput.value = API_URL;
-            if (maxSelect) maxSelect.value = settings.maxConfigs;
-            if (latencySelect) latencySelect.value = settings.maxLatency;
+            // اعمال به چکباکس‌ها
+            const chkVmess = document.getElementById('chkVmess');
+            const chkVless = document.getElementById('chkVless');
+            const chkTrojan = document.getElementById('chkTrojan');
+            if (chkVmess) chkVmess.checked = settings.protocols.vmess;
+            if (chkVless) chkVless.checked = settings.protocols.vless;
+            if (chkTrojan) chkTrojan.checked = settings.protocols.trojan;
+            
+            // اعمال به سایر فیلدها
+            const txtApi = document.getElementById('txtApiUrl');
+            const selMax = document.getElementById('selMaxConfigs');
+            const selLat = document.getElementById('selMaxLatency');
+            if (txtApi) txtApi.value = API_URL;
+            if (selMax) selMax.value = settings.maxConfigs;
+            if (selLat) selLat.value = settings.maxLatency;
         }
         
         function saveSettings() {
-            try {
-                const vmessCheck = document.getElementById('protoVmess');
-                const vlessCheck = document.getElementById('protoVless');
-                const trojanCheck = document.getElementById('protoTrojan');
-                const apiInput = document.getElementById('apiUrl');
-                const maxSelect = document.getElementById('maxConfigs');
-                const latencySelect = document.getElementById('maxLatency');
-                
-                if (vmessCheck) settings.protocols.vmess = vmessCheck.checked;
-                if (vlessCheck) settings.protocols.vless = vlessCheck.checked;
-                if (trojanCheck) settings.protocols.trojan = trojanCheck.checked;
-                if (maxSelect) settings.maxConfigs = parseInt(maxSelect.value);
-                if (latencySelect) settings.maxLatency = parseInt(latencySelect.value);
-                if (apiInput) API_URL = apiInput.value;
-                
-                localStorage.setItem('v2ray_settings', JSON.stringify(settings));
-                updateStatus('✅ تنظیمات ذخیره شد!');
-                // بستن مودال
-                const modal = document.getElementById('settingsModal');
-                if (modal) modal.classList.remove('active');
-            } catch(e) {
-                console.error('خطا در ذخیره تنظیمات:', e);
-                updateStatus('❌ خطا در ذخیره تنظیمات');
-            }
+            // گرفتن مقادیر از DOM
+            const chkVmess = document.getElementById('chkVmess');
+            const chkVless = document.getElementById('chkVless');
+            const chkTrojan = document.getElementById('chkTrojan');
+            const txtApi = document.getElementById('txtApiUrl');
+            const selMax = document.getElementById('selMaxConfigs');
+            const selLat = document.getElementById('selMaxLatency');
+            
+            // ذخیره در settings
+            settings.protocols.vmess = chkVmess ? chkVmess.checked : true;
+            settings.protocols.vless = chkVless ? chkVless.checked : true;
+            settings.protocols.trojan = chkTrojan ? chkTrojan.checked : true;
+            settings.maxConfigs = selMax ? parseInt(selMax.value) : 500;
+            settings.maxLatency = selLat ? parseInt(selLat.value) : 10000;
+            API_URL = txtApi ? txtApi.value : "https://v2ray-validator.onrender.com";
+            
+            // ذخیره در localStorage
+            localStorage.setItem('v2ray_settings', JSON.stringify(settings));
+            updateStatus('✅ تنظیمات ذخیره شد!');
+            
+            // بستن مودال
+            const modal = document.getElementById('settingsModal');
+            if (modal) modal.classList.remove('active');
         }
         
         function openSettings() { 
@@ -996,9 +997,10 @@
         }
         
         document.getElementById('autoTestBtn').onclick = startAutoTest;
+        
         // اتصال دکمه ذخیره تنظیمات
-        const saveSettingsBtn = document.getElementById('saveSettingsBtn');
-        if (saveSettingsBtn) saveSettingsBtn.onclick = saveSettings;
+        const saveBtn = document.getElementById('btnSaveSettings');
+        if (saveBtn) saveBtn.onclick = saveSettings;
         
         loadSettings();
         setTimeout(() => checkAndWakeServer(false), 1000);
