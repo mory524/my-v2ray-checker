@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="V2Ray Checker Pro">
-    <title>V2Ray Config Checker Pro - نسخه نهایی و پایدار</title>
+    <title>V2Ray Config Checker Pro - نسخه نهایی با تنظیمات</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -36,7 +36,6 @@
             font-weight: bold;
             margin-top: 8px;
         }
-        /* دکمه تنظیمات (چرخ‌دنده) */
         .settings-btn {
             position: fixed;
             bottom: 20px;
@@ -57,7 +56,6 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
         .settings-btn:hover { transform: rotate(30deg); background: #89b4fa; }
-        /* مودال تنظیمات */
         .modal {
             display: none;
             position: fixed;
@@ -126,7 +124,6 @@
             width: 100%;
             margin-top: 15px;
         }
-        /* تب‌ها */
         .tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
         .tab-btn {
             flex: 1;
@@ -142,7 +139,6 @@
         .tab-btn.active { background: #89b4fa; color: #1e1e2e; }
         .tab-content { display: none; animation: fadeIn 0.3s ease; }
         .tab-content.active { display: block; }
-        /* کارت‌ها و دکمه‌ها */
         .card {
             background: #313244;
             border-radius: 16px;
@@ -164,10 +160,8 @@
         .btn-danger { background: #f38ba8; color: #1e1e2e; }
         .btn-warning { background: #fab387; color: #1e1e2e; }
         .btn:hover { transform: translateY(-2px); filter: brightness(1.05); }
-        /* نوار پیشرفت */
         .progress-bar { width: 100%; height: 8px; background: #45475a; border-radius: 10px; overflow: hidden; margin: 15px 0; }
         .progress-fill { width: 0%; height: 100%; background: linear-gradient(90deg, #89b4fa, #74c7ec); transition: width 0.3s ease; }
-        /* لیست نتایج */
         .results-list { max-height: 400px; overflow-y: auto; margin: 15px 0; }
         .result-item {
             background: #1e1e2e;
@@ -180,7 +174,7 @@
         }
         .result-item.verified { border-right: 4px solid #a6e3a1; background: #313244; }
         .result-item.dead { opacity: 0.5; text-decoration: line-through; }
-        /* دسته‌بندی لوکیشن (اختیاری) */
+        
         .location-group {
             margin-bottom: 20px;
             background: #1e1e2e;
@@ -208,7 +202,7 @@
         .location-header .arrow { margin-right: auto; }
         .location-configs { display: block; padding: 15px; }
         .location-configs.collapsed { display: none; }
-        /* گرید QR */
+        
         .qr-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; }
         .qr-card {
             background: #1e1e2e;
@@ -274,8 +268,8 @@
     <div class="container">
         <div class="header">
             <h1>🚀 V2Ray Config Checker Pro</h1>
-            <p>نسخه Real Test | پایدار و بدون خطا</p>
-            <span class="badge">✓ تست واقعی | ✓ دسته‌بندی دستی | ✓ QR Code</span>
+            <p>نسخه Real Test | تنظیمات پیشرفته + دسته‌بندی</p>
+            <span class="badge">✓ تست واقعی | ✓ ذخیره تنظیمات | ✓ QR Code</span>
             <div id="serverStatus" class="server-status waking">🟡 در حال بررسی سرور...</div>
         </div>
 
@@ -285,7 +279,6 @@
             <button class="tab-btn" onclick="switchTab('top')">🏆 کانفیگ‌های تضمینی</button>
         </div>
 
-        <!-- تب تست خودکار -->
         <div id="autoTab" class="tab-content active">
             <div class="card">
                 <h3>📡 تست خودکار با Real Test</h3>
@@ -300,7 +293,6 @@
             </div>
         </div>
 
-        <!-- تب تست دستی -->
         <div id="manualTab" class="tab-content">
             <div class="card">
                 <h3>🔧 تست دستی</h3>
@@ -311,7 +303,6 @@
             </div>
         </div>
 
-        <!-- تب 5 کانفیگ برتر -->
         <div id="topTab" class="tab-content">
             <div class="card">
                 <h3>🏆 بهترین کانفیگ‌های ۱۰۰٪ تضمینی</h3>
@@ -325,7 +316,6 @@
 
     <button class="settings-btn" onclick="openSettings()">⚙️</button>
 
-    <!-- مودال تنظیمات -->
     <div id="settingsModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -333,38 +323,40 @@
                 <button class="close-modal" onclick="closeSettings()">✕</button>
             </div>
             <div class="settings-section">
-                <h3>📡 پروتکل‌های مجاز</h3>
+                <h3>📡 پروتکل‌های مجاز (فقط برای تست خودکار)</h3>
                 <div class="checkbox-group">
                     <label><input type="checkbox" id="protoVmess" checked> VMess</label>
                     <label><input type="checkbox" id="protoVless" checked> VLESS</label>
                     <label><input type="checkbox" id="protoTrojan" checked> Trojan</label>
                 </div>
+                <p class="info-text">⚠️ این تنظیمات فقط روی تب "تست خودکار" تأثیر دارد. تب "تست دستی" همه پروتکل‌ها را بررسی می‌کند.</p>
             </div>
             <div class="settings-section">
                 <h3>🌐 آدرس سرور واسط (API)</h3>
                 <input type="text" id="apiUrl" value="https://v2ray-validator.onrender.com">
+                <p class="info-text">آدرس سروری که تست واقعی را انجام می‌دهد</p>
             </div>
             <div class="settings-section">
-                <h3>🔢 حداکثر تعداد کانفیگ</h3>
+                <h3>🔢 حداکثر تعداد کانفیگ برای جستجو (فقط برای تست خودکار)</h3>
                 <select id="maxConfigs">
-                    <option value="100">۱۰۰ (سریع)</option>
-                    <option value="500" selected>۵۰۰ (پیش‌فرض)</option>
-                    <option value="1000">۱۰۰۰ (کامل)</option>
+                    <option value="100">۱۰۰ کانفیگ (سریع)</option>
+                    <option value="500" selected>۵۰۰ کانفیگ (پیش‌فرض)</option>
+                    <option value="1000">۱۰۰۰ کانفیگ (کامل)</option>
                 </select>
+                <p class="info-text">⚠️ این تنظیمات فقط روی تب "تست خودکار" تأثیر دارد.</p>
             </div>
             <div class="settings-section">
-                <h3>⏱️ حداکثر زمان تست</h3>
+                <h3>⏱️ حداکثر زمان تست (میلی‌ثانیه)</h3>
                 <select id="maxLatency">
-                    <option value="5000">۵ ثانیه</option>
-                    <option value="10000" selected>۱۰ ثانیه</option>
-                    <option value="30000">۳۰ ثانیه</option>
+                    <option value="5000">۵ ثانیه (سریع)</option>
+                    <option value="10000" selected>۱۰ ثانیه (پیش‌فرض)</option>
+                    <option value="30000">۳۰ ثانیه (کامل)</option>
                 </select>
             </div>
             <button class="save-settings" id="saveSettingsBtn">💾 ذخیره تنظیمات</button>
         </div>
     </div>
 
-    <!-- مودال وضعیت سرور -->
     <div id="serverStatusModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -376,20 +368,18 @@
     </div>
 
     <script>
-        // ==================== تنظیمات اولیه ====================
+        // تنظیمات اولیه
         let API_URL = "https://v2ray-validator.onrender.com";
-        let activeConfigs = []; // لیست کانفیگ‌های فعال
+        let activeConfigs = [];
         let isTesting = false;
         let isWakingUp = false;
         
-        // تنظیمات برنامه
         let settings = {
             protocols: { vmess: true, vless: true, trojan: true },
             maxConfigs: 500,
             maxLatency: 10000
         };
 
-        // منابع دریافت کانفیگ
         const SUB_URLS = [
             "https://raw.githubusercontent.com/barry-far/V2ray-config/main/Sub1.txt",
             "https://raw.githubusercontent.com/barry-far/V2ray-config/main/Sub2.txt",
@@ -401,7 +391,7 @@
             "https://raw.githubusercontent.com/barry-far/V2ray-config/main/Sub8.txt"
         ];
 
-        // ============ توابع کمکی پایدار ============
+        // توابع کمکی
         async function fetchWithTimeout(url, options = {}, timeout = 15000) {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), timeout);
@@ -433,7 +423,6 @@
             if (statusBar) statusBar.innerHTML = msg;
         }
 
-        // بیدار کردن سرور
         async function checkAndWakeServer(showModal = true) {
             if (isWakingUp) return false;
             isWakingUp = true;
@@ -474,7 +463,6 @@
             if (modal) modal.classList.remove('active');
         }
 
-        // Parse کردن کانفیگ
         function parseConfig(config) {
             try {
                 if (config.startsWith('vmess://')) {
@@ -489,12 +477,15 @@
                     let match = config.match(/@([^:]+):(\d+)/);
                     if (match) return { host: match[1], port: match[2], name: 'Trojan', type: 'trojan' };
                 }
-            } catch(e) { console.warn("Parse error:", e); }
+            } catch(e) { return null; }
             return null;
         }
 
-        // ============ تست خودکار ============
+        // تست خودکار
         async function startAutoTest() {
+            // نمایش تنظیمات فعلی در لاگ
+            addLog(`🔧 تنظیمات فعلی: ${Object.entries(settings.protocols).filter(p=>p[1]).map(p=>p[0]).join(', ')} | حداکثر ${settings.maxConfigs} کانفیگ | زمان تست ${settings.maxLatency/1000} ثانیه`, 'info');
+            
             if (isTesting) {
                 isTesting = false;
                 const btn = document.getElementById('autoTestBtn');
@@ -585,7 +576,7 @@
                         return { 
                             latency: result.latency || 999, 
                             config, host, port, name, type,
-                            location: '🌍 انتخاب نشده' // مقدار پیش‌فرض برای لوکیشن
+                            location: '🌍'
                         };
                     }
                     return null;
@@ -597,7 +588,6 @@
                 }
             };
             
-            // تست همزمان ۵ تایی
             for (let i = 0; i < allConfigs.length && isTesting; i += 5) {
                 const batch = allConfigs.slice(i, Math.min(i+5, allConfigs.length));
                 const batchResults = await Promise.all(batch.map(c => testOne(c)));
@@ -634,7 +624,7 @@
             }
         }
         
-        // ============ توابع QR و نمایش ============
+        // توابع QR و نمایش
         function createQRCode(id, text) {
             const container = document.getElementById(id);
             if (!container) return;
@@ -658,10 +648,9 @@
                 grid.innerHTML = '<div style="text-align:center;padding:40px;">⚠️ کانفیگی وجود ندارد</div>';
                 return;
             }
-            // گروه‌بندی بر اساس لوکیشن (همان مقدار پیش‌فرض)
             const groups = new Map();
             for (const cfg of activeConfigs) {
-                const loc = cfg.location || '🌍 نامشخص';
+                const loc = cfg.location || '🌍';
                 if (!groups.has(loc)) groups.set(loc, []);
                 groups.get(loc).push(cfg);
             }
@@ -709,7 +698,7 @@
             }
         }
 
-        // ============ تست دستی ============
+        // تست دستی
         async function startManualTest() {
             const input = document.getElementById('manualConfig').value.trim();
             if (!input) { alert('کانفیگ وارد کنید'); return; }
@@ -796,7 +785,7 @@
             }
         }
         
-        // ============ مدیریت تنظیمات (بدون خطا) ============
+        // ============ مدیریت تنظیمات - اصلاح شده ============
         function loadSettings() {
             const saved = localStorage.getItem('v2ray_settings');
             if (saved) {
@@ -806,7 +795,8 @@
                     if (p.apiUrl) API_URL = p.apiUrl;
                 } catch(e) { console.warn("خطا در بارگیری تنظیمات:", e); }
             }
-            // پیدا کردن المان‌ها با بررسی وجودشان
+            
+            // اعمال تنظیمات به المان‌های صفحه
             const vmessCheck = document.getElementById('protoVmess');
             const vlessCheck = document.getElementById('protoVless');
             const trojanCheck = document.getElementById('protoTrojan');
@@ -820,6 +810,8 @@
             if (apiUrlInput) apiUrlInput.value = API_URL;
             if (maxConfigsSelect) maxConfigsSelect.value = settings.maxConfigs;
             if (maxLatencySelect) maxLatencySelect.value = settings.maxLatency;
+            
+            addLog(`⚙️ تنظیمات بارگذاری شد: ${Object.entries(settings.protocols).filter(p=>p[1]).map(p=>p[0]).join(', ')} | ${settings.maxConfigs} کانفیگ | ${settings.maxLatency/1000} ثانیه`, 'info');
         }
         
         function saveSettings() {
@@ -839,8 +831,9 @@
                 if (apiUrlInput) API_URL = apiUrlInput.value;
                 
                 localStorage.setItem('v2ray_settings', JSON.stringify(settings));
-                updateStatus('✅ تنظیمات ذخیره شد');
-                closeSettings(); // بستن مودال
+                updateStatus('✅ تنظیمات ذخیره شد!');
+                addLog(`✅ تنظیمات جدید: ${Object.entries(settings.protocols).filter(p=>p[1]).map(p=>p[0]).join(', ')} | حداکثر ${settings.maxConfigs} کانفیگ | زمان تست ${settings.maxLatency/1000} ثانیه`, 'success');
+                closeSettings();
             } catch(e) {
                 console.error('خطا در ذخیره تنظیمات:', e);
                 updateStatus('❌ خطا در ذخیره تنظیمات');
@@ -856,7 +849,7 @@
             if (modal) modal.classList.remove('active');
         }
         
-        // اتصال رویدادها پس از بارگذاری صفحه
+        // اتصال رویدادها
         window.addEventListener('DOMContentLoaded', () => {
             const autoBtn = document.getElementById('autoTestBtn');
             if (autoBtn) autoBtn.onclick = startAutoTest;
@@ -866,7 +859,7 @@
             setTimeout(() => checkAndWakeServer(false), 1000);
         });
         
-        // تعریف توابع گلوبال برای استفاده در onclick هاب HTML
+        // توابع گلوبال
         window.toggleGroup = toggleGroup;
         window.copyConfig = copyConfig;
         window.switchTab = switchTab;
