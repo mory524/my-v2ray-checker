@@ -776,10 +776,7 @@ async function getLocationForHost(host) {
             }
             
             const serverReady = await checkAndWakeServer(true);
-            
-            if (!serverReady) {
-                alert('❌ سرور رابط در دسترس نیست!\nلطفاً چند دقیقه دیگر تلاش کنید.');
-                return;
+            if (!serverReady && !confirm('سرور در حال بیدار شدن است؟ ادامه می‌دهید؟')) return;
             }
             
             startAutoTest();
