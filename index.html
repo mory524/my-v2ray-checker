@@ -1,18 +1,15 @@
-<!DOCTYPE html><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#1e1e2e">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>V2Ray Config Checker Pro - نسخه مستقل (بدون سرور)</title>
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="V2Ray Checker Pro">
+    <title>V2Ray Config Checker Pro - نسخه Real Test</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #1e1e2e 0%, #181825 100%);
@@ -20,17 +17,8 @@
             padding: 20px;
             min-height: 100vh;
         }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 30px; }
         .header h1 {
             font-size: 2em;
             background: linear-gradient(135deg, #89b4fa, #74c7ec);
@@ -38,7 +26,6 @@
             background-clip: text;
             color: transparent;
         }
-
         .badge {
             display: inline-block;
             background: #a6e3a1;
@@ -49,7 +36,15 @@
             font-weight: bold;
             margin-top: 8px;
         }
-
+        .firefox-warning {
+            background: #f38ba8;
+            color: #1e1e2e;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            text-align: center;
+            display: none;
+        }
         .settings-btn {
             position: fixed;
             bottom: 20px;
@@ -67,14 +62,9 @@
             justify-content: center;
             transition: all 0.3s ease;
             z-index: 1000;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
-
-        .settings-btn:hover {
-            transform: rotate(30deg);
-            background: #89b4fa;
-        }
-
+        .settings-btn:hover { transform: rotate(30deg); background: #89b4fa; }
         .modal {
             display: none;
             position: fixed;
@@ -82,16 +72,12 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0,0,0,0.8);
             z-index: 2000;
             justify-content: center;
             align-items: center;
         }
-
-        .modal.active {
-            display: flex;
-        }
-
+        .modal.active { display: flex; }
         .modal-content {
             background: #1e1e2e;
             border-radius: 20px;
@@ -102,7 +88,6 @@
             padding: 20px;
             border: 1px solid #45475a;
         }
-
         .modal-header {
             display: flex;
             justify-content: space-between;
@@ -111,11 +96,7 @@
             padding-bottom: 10px;
             border-bottom: 1px solid #45475a;
         }
-
-        .modal-header h2 {
-            color: #89b4fa;
-        }
-
+        .modal-header h2 { color: #89b4fa; }
         .close-modal {
             background: none;
             border: none;
@@ -123,34 +104,16 @@
             color: #f38ba8;
             cursor: pointer;
         }
-
         .settings-section {
             margin-bottom: 20px;
             padding: 15px;
             background: #313244;
             border-radius: 12px;
         }
-
-        .settings-section h3 {
-            color: #89b4fa;
-            margin-bottom: 10px;
-        }
-
-        .checkbox-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-
-        .checkbox-group label {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            cursor: pointer;
-        }
-
-        select,
-        input {
+        .settings-section h3 { color: #89b4fa; margin-bottom: 10px; }
+        .checkbox-group { display: flex; flex-wrap: wrap; gap: 15px; }
+        .checkbox-group label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+        select, input {
             background: #1e1e2e;
             border: 1px solid #45475a;
             color: #cdd6f4;
@@ -159,7 +122,6 @@
             width: 100%;
             margin-top: 5px;
         }
-
         .save-settings {
             background: #a6e3a1;
             color: #1e1e2e;
@@ -171,14 +133,7 @@
             width: 100%;
             margin-top: 15px;
         }
-
-        .tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
         .tab-btn {
             flex: 1;
             padding: 12px 20px;
@@ -190,32 +145,15 @@
             cursor: pointer;
             transition: all 0.3s ease;
         }
-
-        .tab-btn.active {
-            background: #89b4fa;
-            color: #1e1e2e;
-        }
-
-        .tab-btn:hover:not(.active) {
-            background: #45475a;
-        }
-
-        .tab-content {
-            display: none;
-            animation: fadeIn 0.3s ease;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
+        .tab-btn.active { background: #89b4fa; color: #1e1e2e; }
+        .tab-content { display: none; animation: fadeIn 0.3s ease; }
+        .tab-content.active { display: block; }
         .card {
             background: #313244;
             border-radius: 16px;
             padding: 20px;
             margin-bottom: 20px;
         }
-
         .btn {
             padding: 12px 24px;
             border: none;
@@ -223,57 +161,18 @@
             font-size: 1em;
             font-weight: bold;
             cursor: pointer;
-            transition: all 0.3s ease;
             margin: 5px;
+            transition: all 0.3s ease;
         }
-
-        .btn-primary {
-            background: #89b4fa;
-            color: #1e1e2e;
-        }
-
-        .btn-success {
-            background: #a6e3a1;
-            color: #1e1e2e;
-        }
-
-        .btn-danger {
-            background: #f38ba8;
-            color: #1e1e2e;
-        }
-
-        .btn-warning {
-            background: #fab387;
-            color: #1e1e2e;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            filter: brightness(1.05);
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 8px;
-            background: #45475a;
-            border-radius: 10px;
-            overflow: hidden;
-            margin: 15px 0;
-        }
-
-        .progress-fill {
-            width: 0%;
-            height: 100%;
-            background: linear-gradient(90deg, #89b4fa, #74c7ec);
-            transition: width 0.3s ease;
-        }
-
-        .results-list {
-            max-height: 400px;
-            overflow-y: auto;
-            margin: 15px 0;
-        }
-
+        .btn-primary { background: #89b4fa; color: #1e1e2e; }
+        .btn-success { background: #a6e3a1; color: #1e1e2e; }
+        .btn-danger { background: #f38ba8; color: #1e1e2e; }
+        .btn-warning { background: #fab387; color: #1e1e2e; }
+        .btn-sm { padding: 6px 12px; font-size: 0.8em; }
+        .btn:hover { transform: translateY(-2px); filter: brightness(1.05); }
+        .progress-bar { width: 100%; height: 8px; background: #45475a; border-radius: 10px; overflow: hidden; margin: 15px 0; }
+        .progress-fill { width: 0%; height: 100%; background: linear-gradient(90deg, #89b4fa, #74c7ec); transition: width 0.3s ease; }
+        .results-list { max-height: 400px; overflow-y: auto; margin: 15px 0; }
         .result-item {
             background: #1e1e2e;
             padding: 12px;
@@ -282,56 +181,55 @@
             font-family: monospace;
             font-size: 0.85em;
             word-break: break-all;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
         }
-
-        .result-item.verified {
-            border-right: 4px solid #a6e3a1;
-            background: #313244;
-        }
-
-        .result-item .badge {
-            font-size: 0.7em;
-            padding: 2px 8px;
-            border-radius: 12px;
-            background: #89b4fa;
-            color: #1e1e2e;
-        }
-
-        .qr-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
-        }
-
-        .qr-card {
+        .result-item.verified { border-right: 4px solid #a6e3a1; background: #313244; }
+        .result-item.dead { opacity: 0.5; text-decoration: line-through; }
+        
+        /* استایل دسته‌بندی لوکیشن */
+        .location-group {
+            margin-bottom: 20px;
             background: #1e1e2e;
             border-radius: 16px;
-            padding: 15px;
-            text-align: center;
+            overflow: hidden;
+            border: 1px solid #313244;
         }
-
-        .qr-card h3 {
-            color: #89b4fa;
-            margin-bottom: 10px;
+        .location-header {
+            background: #313244;
+            padding: 12px 20px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
         }
-
-        .qr-code {
-            background: white;
-            padding: 10px;
+        .location-header:hover { background: #45475a; }
+        .location-header .count {
+            background: #89b4fa;
+            color: #1e1e2e;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 0.75em;
+        }
+        .location-header .arrow { margin-right: auto; font-size: 1.2em; }
+        .location-header .save-location-btn {
+            background: #a6e3a1;
+            color: #1e1e2e;
+            border: none;
+            padding: 5px 12px;
             border-radius: 12px;
-            display: inline-block;
-            margin: 10px 0;
+            font-size: 0.7em;
+            cursor: pointer;
         }
-
-        .qr-code canvas {
-            width: 120px;
-            height: 120px;
-        }
-
+        .location-header .save-location-btn:hover { background: #89b4fa; transform: scale(1.02); }
+        .location-configs { display: block; padding: 15px; }
+        .location-configs.collapsed { display: none; }
+        
+        .qr-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 20px; }
+        .qr-card { background: #1e1e2e; border-radius: 16px; padding: 15px; text-align: center; }
+        .qr-code { background: white; padding: 10px; border-radius: 12px; display: inline-block; margin: 10px 0; min-height: 120px; }
+        .qr-code canvas { width: 120px; height: 120px; }
+        .qr-error { color: #f38ba8; font-size: 11px; padding: 10px; }
         textarea {
             width: 100%;
             padding: 12px;
@@ -342,7 +240,6 @@
             font-family: monospace;
             resize: vertical;
         }
-
         .status-bar {
             background: #45475a;
             padding: 10px 15px;
@@ -351,31 +248,6 @@
             text-align: center;
             font-size: 0.85em;
         }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-            }
-            to {
-                opacity: 1;
-            }
-        }
-
-        @media (max-width: 768px) {
-            body {
-                padding: 10px;
-            }
-
-            .tab-btn {
-                padding: 10px;
-                font-size: 0.85em;
-            }
-
-            .qr-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
         .server-status {
             display: inline-block;
             margin-top: 10px;
@@ -385,18 +257,8 @@
             font-weight: bold;
             background: #313244;
         }
-
-        .server-status.online {
-            background: #a6e3a120;
-            color: #a6e3a1;
-            border-right: 3px solid #a6e3a1;
-        }
-
-        .server-status.waking {
-            background: #fab38720;
-            color: #fab387;
-            border-right: 3px solid #fab387;
-        }
+        .server-status.online { background: #a6e3a120; color: #a6e3a1; border-right: 3px solid #a6e3a1; }
+        .server-status.waking { background: #fab38720; color: #fab387; border-right: 3px solid #fab387; }
         .spinner-small {
             display: inline-block;
             width: 14px;
@@ -408,11 +270,14 @@
             vertical-align: middle;
             margin-left: 5px;
         }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            .tab-btn { padding: 10px; font-size: 0.85em; }
+            .qr-grid { grid-template-columns: 1fr; }
+            .settings-btn { bottom: 15px; right: 15px; width: 50px; height: 50px; font-size: 24px; }
+            .location-header { flex-wrap: wrap; }
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
@@ -421,30 +286,40 @@
     <div class="container">
         <div class="header">
             <h1>🚀 V2Ray Config Checker Pro</h1>
-            <p>نسخه مستقل - بدون نیاز به سرور واسط</p>
-            <span class="badge">✓ تست مستقیم TCP | ✓ بدون فیلتر | ✓ ۱۰۰٪ مستقل</span>
-            <div id="serverStatus" class="server-status online">🟢 آماده به کار</div>
+            <p>نسخه Real Test | تست واقعی + تشخیص لوکیشن + دسته‌بندی جغرافیایی</p>
+            <span class="badge">✓ تست واقعی | ✓ تشخیص لوکیشن | ✓ دسته‌بندی کشور | ✓ 10 کانفیگ برتر</span>
+            <div id="serverStatus" class="server-status waking">🟡 در حال بررسی سرور...</div>
+        </div>
+
+        <div id="firefoxWarning" class="firefox-warning">
+            <div class="warning-icon">⚠️</div>
+            <div class="warning-title">توجه: مشکل سازگاری با مرورگر فایرفاکس</div>
+            <div class="warning-text">مرورگر فایرفاکس به دلیل محدودیت‌های امنیتی، نمی‌تواند به درستی با سرور تست واقعی ارتباط برقرار کند.</div>
+            <div class="suggestion">✅ پیشنهاد: لطفاً از مرورگر Google Chrome یا Microsoft Edge استفاده کنید.</div>
         </div>
 
         <div class="tabs">
             <button class="tab-btn active" onclick="switchTab('auto')">🤖 تست خودکار</button>
             <button class="tab-btn" onclick="switchTab('manual')">🔧 تست دستی</button>
-            <button class="tab-btn" onclick="switchTab('top')">🏆 کانفیگ‌های برتر</button>
+            <button class="tab-btn" onclick="switchTab('location')">🗺️ دسته‌بندی لوکیشن</button>
+            <button class="tab-btn" onclick="switchTab('top10')">🏆 10 کانفیگ برتر</button>
         </div>
 
         <!-- تب تست خودکار -->
         <div id="autoTab" class="tab-content active">
             <div class="card">
-                <h3>📡 تست خودکار (مستقل)</h3>
-                <p style="margin: 10px 0; color: #a6e3a1;">✅ تست مستقیم TCP - بدون نیاز به سرور خارجی</p>
-                <button class="btn btn-primary" id="autoTestBtn">▶ شروع تست</button>
-                <button class="btn btn-success" onclick="saveConfigs()" id="saveBtn" disabled>💾 ذخیره</button>
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progressFill"></div>
-                </div>
-                <div id="progressLabel">⏳ آماده</div>
-                <h4 style="margin: 20px 0 10px 0;">✅ کانفیگ‌های فعال:</h4>
+                <h3>📡 تست خودکار با Real Test</h3>
+                <p style="margin: 10px 0; color: #a6e3a1;">✅ تست واقعی از طریق سرور واسط - فقط کانفیگ‌هایی که واقعاً کار می‌کنند</p>
+                <p style="margin: 10px 0; font-size: 0.85em; color: #fab387;">⚙️ این تب از تنظیمات (پروتکل، تعداد، تاخیر) تبعیت می‌کند</p>
+                <button class="btn btn-primary" id="autoTestBtn">▶ شروع تست واقعی</button>
+                <button class="btn btn-success" onclick="saveConfigs()" id="saveBtn" disabled>💾 ذخیره کانفیگ‌های تضمینی</button>
+                
+                <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+                <div id="progressLabel">⏳ آماده برای شروع تست واقعی</div>
+
+                <h4 style="margin: 20px 0 10px 0;">✅ کانفیگ‌های ۱۰۰٪ تضمینی:</h4>
                 <div class="results-list" id="resultsList"></div>
+
                 <h4 style="margin: 20px 0 10px 0;">📋 لاگ تست:</h4>
                 <div class="results-list" id="logList" style="max-height: 200px;"></div>
             </div>
@@ -453,76 +328,123 @@
         <!-- تب تست دستی -->
         <div id="manualTab" class="tab-content">
             <div class="card">
-                <h3>🔧 تست دستی</h3>
-                <p style="margin: 10px 0; color: #a6e3a1;">✅ کانفیگ تکی یا لینک سابسکریپشن</p>
-                <textarea id="manualConfig" rows="5" placeholder="لینک کانفیگ خود را اینجا وارد کنید..."></textarea>
+                <h3>🔧 تست دستی با Real Test</h3>
+                <p style="margin: 10px 0; color: #a6e3a1;">✅ می‌توانید کانفیگ تکی یا لینک سابسکریپشن وارد کنید</p>
+                <p style="margin: 10px 0; font-size: 0.85em; color: #89b4fa;">⚡ این تب از تنظیمات اصلی تأثیر نمی‌پذیرد و همه پروتکل‌ها و پورت‌ها را بررسی می‌کند</p>
+                <textarea id="manualConfig" rows="5" placeholder="لینک کانفیگ خود را اینجا وارد کنید...
+مثال (کانفیگ تکی): vmess://eyJ...
+مثال (لینک سابسکریپشن): https://raw.githubusercontent.com/barry-far/V2ray-config/main/Sub1.txt"></textarea>
                 <div style="margin-top: 15px;">
-                    <button class="btn btn-primary" onclick="startManualTest()">🔍 تست</button>
-                    <button class="btn btn-warning" onclick="clearManual()">🗑 پاک</button>
+                    <button class="btn btn-primary" onclick="startManualTest()">🔍 تست واقعی</button>
+                    <button class="btn btn-warning" onclick="clearManual()">🗑 پاک کردن</button>
                 </div>
-                <h4 style="margin: 20px 0 10px 0;">📊 نتیجه:</h4>
+                <h4 style="margin: 20px 0 10px 0;">📊 نتیجه تست واقعی:</h4>
                 <div class="results-list" id="manualResult"></div>
             </div>
         </div>
 
-        <!-- تب کانفیگ‌های برتر -->
-        <div id="topTab" class="tab-content">
+        <!-- تب دسته‌بندی لوکیشن -->
+        <div id="locationTab" class="tab-content">
             <div class="card">
-                <h3>🏆 کانفیگ‌های برتر</h3>
-                <p style="margin: 10px 0; color: #f9e2af;">✅ بر اساس کمترین تاخیر</p>
-                <button class="btn btn-success" onclick="refreshTop()">🔄 به‌روزرسانی</button>
-                <div id="topGrid" class="qr-grid"></div>
+                <h3>🗺️ دسته‌بندی کانفیگ‌ها بر اساس لوکیشن</h3>
+                <p style="margin: 10px 0; color: #89b4fa;">✅ کانفیگ‌های فعال بر اساس کشور دسته‌بندی شده‌اند (کلیک روی هر دسته برای باز/بسته شدن)</p>
+                <button class="btn btn-success" onclick="refreshLocationGroups()">🔄 به‌روزرسانی</button>
+                <div id="locationGrid" class="qr-grid"></div>
             </div>
         </div>
 
-        <div class="status-bar" id="statusBar">✅ آماده به کار | تست مستقیم TCP</div>
+        <!-- تب 10 کانفیگ برتر -->
+        <div id="top10Tab" class="tab-content">
+            <div class="card">
+                <h3>🏆 10 کانفیگ برتر با کمترین تاخیر</h3>
+                <p style="margin: 10px 0; color: #f9e2af;">✅ بهترین کانفیگ‌ها بر اساس کمترین زمان پاسخ (Latency)</p>
+                <button class="btn btn-success" onclick="refreshTop10()">🔄 به‌روزرسانی</button>
+                <div id="top10Grid" class="qr-grid"></div>
+            </div>
+        </div>
+
+        <div class="status-bar" id="statusBar">
+            ✅ آماده به کار | تست واقعی از طریق سرور واسط - تضمین ۱۰۰٪
+        </div>
     </div>
 
+    <!-- دکمه چرخ‌دنده تنظیمات -->
     <button class="settings-btn" onclick="openSettings()">⚙️</button>
 
+    <!-- مودال تنظیمات -->
     <div id="settingsModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>⚙️ تنظیمات</h2>
+                <h2>⚙️ تنظیمات پیشرفته</h2>
                 <button class="close-modal" onclick="closeSettings()">✕</button>
             </div>
+            
             <div class="settings-section">
-                <h3>📡 پروتکل‌های مجاز</h3>
+                <h3>📡 پروتکل‌های مجاز (فقط برای تست خودکار)</h3>
                 <div class="checkbox-group">
-                    <label><input type="checkbox" id="setVmess" checked> VMess</label>
-                    <label><input type="checkbox" id="setVless" checked> VLESS</label>
-                    <label><input type="checkbox" id="setTrojan" checked> Trojan</label>
+                    <label><input type="checkbox" id="protoVmess" checked> VMess</label>
+                    <label><input type="checkbox" id="protoVless" checked> VLESS</label>
+                    <label><input type="checkbox" id="protoTrojan" checked> Trojan</label>
                 </div>
+                <p class="info-text">⚠️ این تنظیمات فقط روی تب "تست خودکار" تأثیر دارد</p>
             </div>
+
             <div class="settings-section">
-                <h3>🔢 تعداد کانفیگ برتر</h3>
-                <select id="setTopCount">
-                    <option value="5">۵ کانفیگ</option>
-                    <option value="10" selected>۱۰ کانفیگ</option>
-                    <option value="20">۲۰ کانفیگ</option>
+                <h3>🌐 آدرس سرور واسط (API)</h3>
+                <input type="text" id="apiUrl" value="https://v2ray-validator.onrender.com">
+                <p class="info-text">آدرس سروری که تست واقعی را انجام می‌دهد</p>
+            </div>
+
+            <div class="settings-section">
+                <h3>🔢 حداکثر تعداد کانفیگ برای جستجو</h3>
+                <select id="maxConfigs">
+                    <option value="100">۱۰۰ کانفیگ (سریع)</option>
+                    <option value="500">۵۰۰ کانفیگ (متوسط)</option>
+                    <option value="1000" selected>۱۰۰۰ کانفیگ (پیش‌فرض)</option>
+                    <option value="5000">۵۰۰۰ کانفیگ (کامل)</option>
                 </select>
             </div>
+
             <div class="settings-section">
-                <h3>⏱️ زمان تست (ثانیه)</h3>
-                <select id="setTimeout">
-                    <option value="2">۲ ثانیه</option>
-                    <option value="3" selected>۳ ثانیه</option>
-                    <option value="5">۵ ثانیه</option>
+                <h3>⏱️ حداکثر زمان تست (میلی‌ثانیه)</h3>
+                <select id="maxLatency">
+                    <option value="5000">۵ ثانیه (پیش‌فرض)</option>
+                    <option value="10000">۱۰ ثانیه (کامل)</option>
+                    <option value="30000">۳۰ ثانیه (آهسته)</option>
                 </select>
             </div>
-            <button class="save-settings" id="saveSettingsBtn">💾 ذخیره تنظیمات</button>
+
+            <button class="save-settings" onclick="saveSettings()">💾 ذخیره تنظیمات</button>
+        </div>
+    </div>
+
+    <!-- مودال وضعیت سرور -->
+    <div id="serverStatusModal" class="modal">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <div class="modal-header">
+                <h2>🌐 وضعیت سرور رابط</h2>
+                <button class="close-modal" onclick="closeServerStatusModal()">✕</button>
+            </div>
+            <div id="serverStatusDetails" style="padding: 20px;">
+                <div class="spinner"></div>
+                <p style="margin-top: 15px;">در حال بررسی وضعیت سرور...</p>
+            </div>
         </div>
     </div>
 
     <script>
-        // ==================== تنظیمات ====================
+        // ==================== تنظیمات اولیه ====================
+        let API_URL = "https://v2ray-validator.onrender.com";
         let activeConfigs = [];
+        let topConfigs = [];
         let isTesting = false;
-
+        let isWakingUp = false;
+        let locationCache = new Map();
+        
         let settings = {
             protocols: { vmess: true, vless: true, trojan: true },
-            topCount: 10,
-            timeout: 3
+            maxConfigs: 1000,
+            maxLatency: 5000
         };
 
         const SUB_URLS = [
@@ -536,58 +458,494 @@
             "https://raw.githubusercontent.com/barry-far/V2ray-config/main/Sub8.txt"
         ];
 
-        // ==================== تست مستقیم TCP ====================
-        function testTCPConnection(host, port, timeout) {
-            return new Promise((resolve) => {
-                const start = Date.now();
-                try {
-                    const socket = new WebSocket(`wss://${host}:${port}`);
-                    const timer = setTimeout(() => {
-                        socket.close();
-                        resolve({ alive: false, latency: null });
-                    }, timeout * 1000);
+        // دیکشنری لوکیشن با پرچم (گسترده شده برای تشخیص بهتر)
+        const countryFlags = {
+            'United States': '🇺🇸', 'US': '🇺🇸', 'USA': '🇺🇸', 'America': '🇺🇸',
+            'Germany': '🇩🇪', 'DE': '🇩🇪',
+            'Netherlands': '🇳🇱', 'NL': '🇳🇱',
+            'France': '🇫🇷', 'FR': '🇫🇷',
+            'United Kingdom': '🇬🇧', 'UK': '🇬🇧', 'GB': '🇬🇧', 'England': '🇬🇧',
+            'Canada': '🇨🇦', 'CA': '🇨🇦',
+            'Japan': '🇯🇵', 'JP': '🇯🇵',
+            'Singapore': '🇸🇬', 'SG': '🇸🇬',
+            'Russia': '🇷🇺', 'RU': '🇷🇺',
+            'India': '🇮🇳', 'IN': '🇮🇳',
+            'Australia': '🇦🇺', 'AU': '🇦🇺',
+            'Finland': '🇫🇮', 'FI': '🇫🇮',
+            'Sweden': '🇸🇪', 'SE': '🇸🇪',
+            'Norway': '🇳🇴', 'NO': '🇳🇴',
+            'Denmark': '🇩🇰', 'DK': '🇩🇰',
+            'Poland': '🇵🇱', 'PL': '🇵🇱',
+            'Turkey': '🇹🇷', 'TR': '🇹🇷',
+            'Iran': '🇮🇷', 'IR': '🇮🇷',
+            'UAE': '🇦🇪', 'AE': '🇦🇪',
+            'Hong Kong': '🇭🇰', 'HK': '🇭🇰',
+            'South Korea': '🇰🇷', 'KR': '🇰🇷',
+            'Brazil': '🇧🇷', 'BR': '🇧🇷',
+            'Switzerland': '🇨🇭', 'CH': '🇨🇭',
+            'Italy': '🇮🇹', 'IT': '🇮🇹',
+            'Spain': '🇪🇸', 'ES': '🇪🇸',
+            'Israel': '🇮🇱', 'IL': '🇮🇱',
+            'South Africa': '🇿🇦', 'ZA': '🇿🇦'
+        };
 
-                    socket.onopen = () => {
-                        clearTimeout(timer);
-                        const latency = Date.now() - start;
-                        socket.close();
-                        resolve({ alive: true, latency });
-                    };
+        const persianNames = {
+            'United States': 'آمریکا', 'Germany': 'آلمان', 'Netherlands': 'هلند',
+            'France': 'فرانسه', 'United Kingdom': 'انگلستان', 'Canada': 'کانادا',
+            'Japan': 'ژاپن', 'Singapore': 'سنگاپور', 'Russia': 'روسیه',
+            'India': 'هند', 'Australia': 'استرالیا', 'Finland': 'فنلاند',
+            'Sweden': 'سوئد', 'Norway': 'نروژ', 'Denmark': 'دانمارک',
+            'Poland': 'لهستان', 'Turkey': 'ترکیه', 'Iran': 'ایران',
+            'UAE': 'امارات', 'Hong Kong': 'هنگ‌کنگ', 'South Korea': 'کره جنوبی',
+            'Brazil': 'برزیل', 'Switzerland': 'سوئیس', 'Italy': 'ایتالیا',
+            'Spain': 'اسپانیا', 'Israel': 'اسرائیل', 'South Africa': 'آفریقای جنوبی'
+        };
 
-                    socket.onerror = () => {
-                        clearTimeout(timer);
-                        resolve({ alive: false, latency: null });
-                    };
-                } catch (e) {
-                    resolve({ alive: false, latency: null });
+        function getLocationDisplay(country) {
+            if (!country) return '🌍 نامشخص';
+            const flag = countryFlags[country] || '🌍';
+            const persian = persianNames[country] || country;
+            return `${flag} ${persian}`;
+        }
+
+     // ==================== تابع لوکیشن با ۴ API پشتیبان ====================
+async function getLocationForHost(host) {
+    // چک کردن کش
+    if (locationCache.has(host)) return locationCache.get(host);
+
+    // IP های داخلی
+    if (host === 'localhost' || host === '127.0.0.1' || host.startsWith('192.168.') || host.startsWith('10.')) {
+        locationCache.set(host, '🏠 محلی');
+        return '🏠 محلی';
+    }
+
+    // لیست API های پشتیبان (به ترتیب اولویت)
+    const apis = [
+        {
+            name: 'ipapi.co',
+            url: `https://ipapi.co/${host}/json/`,
+            parser: (data) => data.country_name ? { country: data.country_name, code: data.country_code } : null
+        },
+        {
+            name: 'ip-api.com',
+            url: `http://ip-api.com/json/${host}?fields=status,country,countryCode`,
+            parser: (data) => data.status === 'success' ? { country: data.country, code: data.countryCode } : null
+        },
+        {
+            name: 'freeipapi.com',
+            url: `https://freeipapi.com/api/json/${host}`,
+            parser: (data) => data.countryName ? { country: data.countryName, code: data.countryCode } : null
+        },
+        {
+            name: 'jaiho-ip',
+            url: `https://jaiho-ip.vercel.app/api/json?ip=${host}`,
+            parser: (data) => data.location?.country ? { country: data.location.country, code: null } : null
+        }
+    ];
+
+    // تابع تبدیل کد کشور به پرچم
+    function getFlag(countryCode) {
+        if (!countryCode) return '🌍';
+        try {
+            const codePoints = countryCode.toUpperCase().split('').map(c => 127397 + c.charCodeAt(0));
+            return String.fromCodePoint(...codePoints);
+        } catch(e) { return '🌍'; }
+    }
+
+    // دیکشنری نام فارسی کشورها
+    function getPersianName(country) {
+        const names = {
+            'United States': 'آمریکا', 'Germany': 'آلمان', 'Netherlands': 'هلند',
+            'France': 'فرانسه', 'United Kingdom': 'انگلستان', 'Canada': 'کانادا',
+            'Japan': 'ژاپن', 'Singapore': 'سنگاپور', 'Russia': 'روسیه',
+            'India': 'هند', 'Australia': 'استرالیا', 'Turkey': 'ترکیه',
+            'Iran': 'ایران', 'Hong Kong': 'هنگ‌کنگ', 'South Korea': 'کره جنوبی',
+            'Brazil': 'برزیل', 'Switzerland': 'سوئیس', 'Italy': 'ایتالیا',
+            'Spain': 'اسپانیا', 'Poland': 'لهستان', 'Sweden': 'سوئد',
+            'Norway': 'نروژ', 'Denmark': 'دانمارک', 'Finland': 'فنلاند'
+        };
+        return names[country] || country;
+    }
+
+    // امتحان کردن API ها به ترتیب
+    for (const api of apis) {
+        try {
+            await new Promise(resolve => setTimeout(resolve, 200));
+            
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
+            const response = await fetch(api.url, { signal: controller.signal });
+            clearTimeout(timeoutId);
+
+            if (response.ok) {
+                const data = await response.json();
+                const parsed = api.parser(data);
+                
+                if (parsed && parsed.country) {
+                    const flag = getFlag(parsed.code);
+                    const persian = getPersianName(parsed.country);
+                    const display = `${flag} ${persian}`;
+                    locationCache.set(host, display);
+                    return display;
                 }
-            });
+            }
+        } catch(e) {
+            console.log(`${api.name} failed:`, e.message);
+            continue;
+        }
+    }
+
+    // Fallback نهایی: حدس بر اساس پسوند دامنه
+    let guess = '🌍 نامشخص';
+    const h = host.toLowerCase();
+    if (h.includes('.ir') || h.includes('iran')) guess = '🇮🇷 ایران';
+    else if (h.includes('.us') || h.includes('usa')) guess = '🇺🇸 آمریکا';
+    else if (h.includes('.de') || h.includes('germany')) guess = '🇩🇪 آلمان';
+    else if (h.includes('.nl') || h.includes('netherlands')) guess = '🇳🇱 هلند';
+    else if (h.includes('.fr') || h.includes('france')) guess = '🇫🇷 فرانسه';
+    else if (h.includes('.uk') || h.includes('.gb') || h.includes('london')) guess = '🇬🇧 انگلستان';
+    else if (h.includes('.ca') || h.includes('canada')) guess = '🇨🇦 کانادا';
+    else if (h.includes('.jp') || h.includes('japan')) guess = '🇯🇵 ژاپن';
+    else if (h.includes('.sg') || h.includes('singapore')) guess = '🇸🇬 سنگاپور';
+    else if (h.includes('.ru') || h.includes('russia')) guess = '🇷🇺 روسیه';
+    else if (h.includes('.tr') || h.includes('turkey')) guess = '🇹🇷 ترکیه';
+
+    locationCache.set(host, guess);
+    return guess;
+}
+
+        // تشخیص مرورگر فایرفاکس
+        const isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+        
+        if (isFirefox) {
+            const warningDiv = document.getElementById('firefoxWarning');
+            if (warningDiv) warningDiv.style.display = 'block';
+            const statusDiv = document.getElementById('serverStatus');
+            if (statusDiv) {
+                statusDiv.innerHTML = '⚠️ فایرفاکس - ممکن است با مشکل مواجه شود';
+                statusDiv.className = 'server-status waking';
+            }
         }
 
         // ==================== توابع کمکی ====================
-        function addLog(message, type = 'info') {
-            const logList = document.getElementById('logList');
+        async function fetchWithTimeout(url, options = {}, timeout = 10000) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), timeout);
+            try {
+                const response = await fetch(url, { ...options, signal: controller.signal });
+                clearTimeout(timeoutId);
+                return response;
+            } catch(e) {
+                clearTimeout(timeoutId);
+                throw e;
+            }
+        }
+
+        function addLog(message, type = 'info', isManual = false) {
+            const logList = isManual ? document.getElementById('manualResult') : document.getElementById('logList');
             if (!logList) return;
             const time = new Date().toLocaleTimeString();
-            const icons = { info: '💚', success: '✅', error: '❌', warning: '⚠️' };
+            const icons = { info: '💚', success: '✅', error: '❌', warning: '⚠️', verified: '🔐' };
             const icon = icons[type] || 'ℹ️';
-            const div = document.createElement('div');
-            div.className = 'result-item';
-            div.innerHTML = `[${time}] ${icon} ${message}`;
-            logList.appendChild(div);
-            div.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            
+            if (isManual) {
+                logList.innerHTML += `<div class="result-item">[${time}] ${icon} ${message}</div>`;
+                logList.scrollTop = logList.scrollHeight;
+            } else {
+                const logEntry = document.createElement('div');
+                logEntry.className = 'result-item';
+                logEntry.innerHTML = `[${time}] ${icon} ${message}`;
+                logList.appendChild(logEntry);
+                logList.scrollTop = logList.scrollHeight;
+            }
         }
 
-        function updateStatus(msg) {
-            document.getElementById('statusBar').innerHTML = msg;
+        function updateStatus(message) {
+            document.getElementById('statusBar').innerHTML = message;
         }
 
-        function parseConfig(config) {
+        // ==================== وضعیت سرور ====================
+        async function checkAndWakeServer(showModal = true) {
+            if (isFirefox) {
+                const statusDiv = document.getElementById('serverStatus');
+                if (statusDiv) {
+                    statusDiv.innerHTML = '⚠️ تست در فایرفاکس محدودیت دارد';
+                    statusDiv.className = 'server-status waking';
+                }
+                updateStatus('⚠️ فایرفاکس - استفاده از کروم/اج توصیه می‌شود');
+                return false;
+            }
+            
+            if (isWakingUp) {
+                addLog('⏳ در حال بیدار کردن سرور... لطفاً صبر کنید', 'warning');
+                return false;
+            }
+            
+            isWakingUp = true;
+            
+            if (showModal) {
+                const modal = document.getElementById('serverStatusModal');
+                modal.classList.add('active');
+                document.getElementById('serverStatusDetails').innerHTML = `
+                    <div class="spinner"></div>
+                    <p style="margin-top: 15px;">🔄 در حال بیدار کردن سرور رابط...</p>
+                    <p style="font-size: 0.8em; margin-top: 10px;">این عمل ممکن است 10-15 ثانیه طول بکشد</p>
+                `;
+            }
+            
+            const statusDiv = document.getElementById('serverStatus');
+            statusDiv.innerHTML = '<span class="spinner-small"></span> در حال بیدار کردن سرور...';
+            statusDiv.className = 'server-status waking';
+            
+            let success = false;
+            
+            for (let attempt = 1; attempt <= 4; attempt++) {
+                try {
+                    addLog(`🔄 تلاش ${attempt}/4 برای بیدار کردن سرور...`, 'info');
+                    
+                    if (showModal) {
+                        document.getElementById('serverStatusDetails').innerHTML = `
+                            <div class="spinner"></div>
+                            <p>🔄 تلاش ${attempt}/4 برای بیدار کردن سرور...</p>
+                            <p style="font-size: 0.8em;">زمان تقریبی: 10-15 ثانیه</p>
+                        `;
+                    }
+                    
+                    await fetchWithTimeout(`${API_URL}/health`, { method: 'GET' }, 15000);
+                    success = true;
+                    addLog(`✅ سرور رابط با موفقیت بیدار شد (تلاش ${attempt})`, 'success');
+                    break;
+                    
+                } catch(e) {
+                    addLog(`⚠️ تلاش ${attempt} ناموفق: ${e.message}`, 'warning');
+                    if (attempt < 4) {
+                        await new Promise(r => setTimeout(r, 2000));
+                    }
+                }
+            }
+            
+            if (success) {
+                statusDiv.innerHTML = '🟢 سرور واسط فعال است';
+                statusDiv.className = 'server-status online';
+                updateStatus('✅ سرور رابط فعال - آماده برای تست');
+                
+                if (showModal) {
+                    document.getElementById('serverStatusDetails').innerHTML = `
+                        <div style="font-size: 48px;">🟢</div>
+                        <h3 style="color: #a6e3a1;">سرور فعال است</h3>
+                        <p>✅ آماده برای تست واقعی</p>
+                    `;
+                    setTimeout(() => closeServerStatusModal(), 1500);
+                }
+            } else {
+                statusDiv.innerHTML = '🔴 سرور در دسترس نیست';
+                statusDiv.className = 'server-status waking';
+                updateStatus('❌ سرور رابط در دسترس نیست');
+                
+                if (showModal) {
+                    document.getElementById('serverStatusDetails').innerHTML = `
+                        <div style="font-size: 48px;">🔴</div>
+                        <h3 style="color: #f38ba8;">سرور در دسترس نیست</h3>
+                        <p>لطفاً بعداً تلاش کنید</p>
+                        <button class="btn btn-primary" onclick="location.reload()" style="margin-top: 15px;">🔄 تلاش مجدد</button>
+                    `;
+                }
+            }
+            
+            isWakingUp = false;
+            return success;
+        }
+
+        function closeServerStatusModal() {
+            document.getElementById('serverStatusModal').classList.remove('active');
+        }
+
+        // ==================== شروع تست خودکار ====================
+        async function startAutoTestWithWake() {
+            if (isFirefox) {
+                alert('⚠️ توجه: مرورگر فایرفاکس به دلیل محدودیت‌های امنیتی نمی‌تواند تست واقعی را به درستی انجام دهد.\n\n✅ لطفاً از مرورگر Google Chrome یا Microsoft Edge استفاده کنید.');
+                return;
+            }
+            
+            if (isTesting) {
+                isTesting = false;
+                document.getElementById('autoTestBtn').innerHTML = '▶ شروع تست واقعی';
+                document.getElementById('autoTestBtn').className = 'btn btn-primary';
+                updateStatus('⏸ تست متوقف شد');
+                return;
+            }
+            
+           const serverReady = await checkAndWakeServer(true);
+            
+            if (!serverReady) {
+                alert('❌ سرور رابط در دسترس نیست!\nلطفاً چند دقیقه دیگر تلاش کنید.');
+                return;
+            }
+            
+            startAutoTest();
+        }
+
+        async function startAutoTest() {
+            if (isTesting) return;
+            
+            isTesting = true;
+            document.getElementById('autoTestBtn').innerHTML = '⏸ توقف تست';
+            document.getElementById('autoTestBtn').className = 'btn btn-danger';
+            document.getElementById('saveBtn').disabled = true;
+            document.getElementById('resultsList').innerHTML = '';
+            document.getElementById('logList').innerHTML = '';
+            activeConfigs = [];
+            locationCache.clear();
+            
+            updateStatus('🔄 در حال دریافت و تست کانفیگ‌ها...');
+            addLog('🚀 شروع تست خودکار...', 'verified');
+            addLog(`📡 پروتکل‌های مجاز: ${Object.entries(settings.protocols).filter(p=>p[1]).map(p=>p[0]).join(', ')}`, 'info');
+            
+            let allConfigs = [];
+            for (const url of SUB_URLS) {
+                if (!isTesting) break;
+                addLog(`📥 دریافت از منبع: ${url.substring(0, 50)}...`, 'info');
+                try {
+                    const response = await fetch(url);
+                    if (response.ok) {
+                        let content = await response.text();
+                        try {
+                            let decoded = atob(content);
+                            if (decoded.includes('://')) content = decoded;
+                        } catch(e) {}
+                        let lines = content.split('\n').filter(l => l.trim() && (l.includes('vmess://') || l.includes('vless://') || l.includes('trojan://')));
+                        lines = lines.filter(line => {
+                            if (line.startsWith('vmess://')) return settings.protocols.vmess;
+                            if (line.startsWith('vless://')) return settings.protocols.vless;
+                            if (line.startsWith('trojan://')) return settings.protocols.trojan;
+                            return false;
+                        });
+                        allConfigs.push(...lines);
+                        addLog(`✅ ${lines.length} کانفیگ دریافت شد`, 'success');
+                    }
+                } catch(e) {
+                    addLog(`❌ خطا در دریافت: ${e.message}`, 'error');
+                }
+                if (allConfigs.length >= settings.maxConfigs) {
+                    allConfigs = allConfigs.slice(0, settings.maxConfigs);
+                    addLog(`⚠️ محدود کردن به ${settings.maxConfigs} کانفیگ`, 'warning');
+                    break;
+                }
+            }
+            
+            if (!allConfigs.length) {
+                addLog('❌ هیچ کانفیگی برای تست یافت نشد!', 'error');
+                isTesting = false;
+                document.getElementById('autoTestBtn').innerHTML = '▶ شروع تست واقعی';
+                document.getElementById('autoTestBtn').className = 'btn btn-primary';
+                return;
+            }
+            
+            addLog(`🔍 ${allConfigs.length} کانفیگ برای تست واقعی آماده شد`, 'info');
+            
+            const total = allConfigs.length;
+            for (let i = 0; i < total && isTesting; i++) {
+                const config = allConfigs[i];
+                let host = '', port = '', name = 'Unknown', type = 'unknown';
+                
+                try {
+                    if (config.startsWith('vmess://')) {
+                        let b64 = config.substring(8).split('#')[0];
+                        while (b64.length % 4) b64 += '=';
+                        let obj = JSON.parse(atob(b64));
+                        host = obj.add;
+                        port = obj.port;
+                        name = obj.ps || 'VMess';
+                        type = 'vmess';
+                    } else if (config.startsWith('vless://')) {
+                        let match = config.match(/@([^:]+):(\d+)/);
+                        if (match) {
+                            host = match[1];
+                            port = match[2];
+                            name = 'VLESS';
+                            type = 'vless';
+                        }
+                    } else if (config.startsWith('trojan://')) {
+                        let match = config.match(/@([^:]+):(\d+)/);
+                        if (match) {
+                            host = match[1];
+                            port = match[2];
+                            name = 'Trojan';
+                            type = 'trojan';
+                        }
+                    }
+                } catch(e) {}
+                
+                if (host && port) {
+                    addLog(`🔄 تست واقعی: ${host}:${port} (${type})...`, 'info');
+                    
+                    try {
+                        const response = await fetchWithTimeout(`${API_URL}/test-config`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ config: config, timeout: settings.maxLatency / 1000 })
+                        }, 15000);
+                        const result = await response.json();
+                        
+                        if (result.alive) {
+                            const latency = result.latency || 0;
+                            const location = await getLocationForHost(host);
+                            activeConfigs.push({ latency, config, host, port, name, type, location });
+                            addLog(`✅ تأیید شد: ${host}:${port} (${type}) | ${latency}ms | ${location}`, 'verified');
+                        } else {
+                            addLog(`❌ رد شد: ${host}:${port} (${type}) | دلیل: ${result.message || 'نامشخص'}`, 'warning');
+                        }
+                    } catch(e) {
+                        addLog(`❌ خطا در تست ${host}:${port}: ${e.message}`, 'error');
+                    }
+                }
+                
+                const progress = ((i + 1) / total * 100);
+                document.getElementById('progressFill').style.width = `${progress}%`;
+                document.getElementById('progressLabel').innerHTML = `⏳ تست واقعی ${i+1} از ${total} کانفیگ...`;
+            }
+            
+            activeConfigs.sort((a, b) => a.latency - b.latency);
+            topConfigs = activeConfigs.slice(0, 10);
+            
+            const resultsList = document.getElementById('resultsList');
+            if (activeConfigs.length === 0) {
+                resultsList.innerHTML = '<div class="result-item" style="text-align:center;">❌ هیچ کانفیگ ۱۰۰٪ تضمینی پیدا نشد!</div>';
+            } else {
+                for (let i = 0; i < Math.min(activeConfigs.length, 50); i++) {
+                    const c = activeConfigs[i];
+                    const latencyDisplay = (c.latency === 999 || c.latency === -1) ? 'نامشخص' : `${c.latency}ms`;
+                    const medal = i < 5 ? (i === 0 ? '🏆 ' : i === 1 ? '🥈 ' : i === 2 ? '🥉 ' : '📌 ') : '   ';
+                    const resultDiv = document.createElement('div');
+                    resultDiv.className = 'result-item verified';
+                    resultDiv.innerHTML = `${medal} ${c.location} | ${c.host}:${c.port} (${c.type}) | ${latencyDisplay} | ${c.name}`;
+                    resultsList.appendChild(resultDiv);
+                }
+            }
+            
+            document.getElementById('progressLabel').innerHTML = `✅ تست واقعی کامل شد! ${activeConfigs.length} کانفیگ ۱۰۰٪ تضمینی`;
+            updateStatus(`✅ تست واقعی کامل شد - ${activeConfigs.length} کانفیگ ۱۰۰٪ تضمینی پیدا شد`);
+            addLog(`✅ تست واقعی کامل شد. ${activeConfigs.length} کانفیگ تأیید شده.`, 'success');
+            
+            if (activeConfigs.length) {
+                document.getElementById('saveBtn').disabled = false;
+                refreshLocationGroups();
+                refreshTop10();
+            }
+            
+            isTesting = false;
+            document.getElementById('autoTestBtn').innerHTML = '▶ شروع تست واقعی';
+            document.getElementById('autoTestBtn').className = 'btn btn-primary';
+        }
+        
+        // ==================== بقیه توابع ====================
+        function extractHostPort(config) {
             try {
                 if (config.startsWith('vmess://')) {
                     let b64 = config.substring(8).split('#')[0];
                     while (b64.length % 4) b64 += '=';
-                    let obj = JSON.parse(atob(b64));
+                    let decoded = atob(b64);
+                    let obj = JSON.parse(decoded);
                     return { host: obj.add, port: obj.port, name: obj.ps || 'VMess', type: 'vmess' };
                 } else if (config.startsWith('vless://')) {
                     let match = config.match(/@([^:]+):(\d+)/);
@@ -596,261 +954,323 @@
                     let match = config.match(/@([^:]+):(\d+)/);
                     if (match) return { host: match[1], port: match[2], name: 'Trojan', type: 'trojan' };
                 }
-            } catch (e) { return null; }
+            } catch(e) {}
             return null;
         }
 
-        // ==================== تست خودکار ====================
-        async function startAutoTest() {
-            if (isTesting) {
-                isTesting = false;
-                document.getElementById('autoTestBtn').innerHTML = '▶ شروع تست';
-                document.getElementById('autoTestBtn').className = 'btn btn-primary';
-                return;
-            }
-
-            isTesting = true;
-            const autoBtn = document.getElementById('autoTestBtn');
-            autoBtn.innerHTML = '⏸ توقف';
-            autoBtn.className = 'btn btn-danger';
-            document.getElementById('saveBtn').disabled = true;
-            document.getElementById('resultsList').innerHTML = '';
-            document.getElementById('logList').innerHTML = '';
-            activeConfigs = [];
-
-            updateStatus('🔄 در حال دریافت کانفیگ...');
-            addLog('🚀 شروع تست مستقیم TCP', 'verified');
-
-            let allConfigs = [];
-            for (const url of SUB_URLS) {
-                if (!isTesting) break;
-                try {
-                    const res = await fetch(url);
-                    if (res.ok) {
-                        let content = await res.text();
-                        try { content = atob(content); } catch (e) {}
-                        let lines = content.split('\n').filter(l => l.trim() && (l.includes('vmess://') || l.includes(
-                            'vless://') || l.includes('trojan://')));
-                        lines = lines.filter(l => {
-                            const parsed = parseConfig(l);
-                            if (!parsed) return false;
-                            if (parsed.type === 'vmess') return settings.protocols.vmess;
-                            if (parsed.type === 'vless') return settings.protocols.vless;
-                            if (parsed.type === 'trojan') return settings.protocols.trojan;
-                            return false;
-                        });
-                        allConfigs.push(...lines);
-                        addLog(`📥 ${lines.length} کانفیگ دریافت شد`, 'info');
-                    }
-                } catch (e) {}
-                if (allConfigs.length >= 200) break;
-            }
-
-            if (!allConfigs.length) {
-                addLog('❌ کانفیگی یافت نشد', 'error');
-                isTesting = false;
-                autoBtn.innerHTML = '▶ شروع تست';
-                autoBtn.className = 'btn btn-primary';
-                return;
-            }
-
-            addLog(`🔍 ${allConfigs.length} کانفیگ - شروع تست مستقیم`, 'info');
-
-            let completed = 0;
-            const total = allConfigs.length;
-            const results = [];
-            const progressFill = document.getElementById('progressFill');
-            const progressLabel = document.getElementById('progressLabel');
-
-            const testOne = async (config) => {
-                if (!isTesting) return null;
-                const parsed = parseConfig(config);
-                if (!parsed) return null;
-                const { host, port, name, type } = parsed;
-                try {
-                    const result = await testTCPConnection(host, port, settings.timeout);
-                    completed++;
-                    const progress = (completed / total) * 100;
-                    if (progressFill) progressFill.style.width = `${progress}%`;
-                    if (progressLabel) progressLabel.innerHTML = `⏳ ${completed}/${total}`;
-                    if (result.alive) {
-                        addLog(`✅ ${host}:${port} (${type}) | ${result.latency}ms`, 'success');
-                        return { latency: result.latency, config, host, port, name, type };
-                    }
-                    return null;
-                } catch (e) {
-                    completed++;
-                    const progress = (completed / total) * 100;
-                    if (progressFill) progressFill.style.width = `${progress}%`;
-                    if (progressLabel) progressLabel.innerHTML = `⏳ ${completed}/${total}`;
-                    return null;
-                }
-            };
-
-            for (let i = 0; i < allConfigs.length && isTesting; i += 5) {
-                const batch = allConfigs.slice(i, Math.min(i + 5, allConfigs.length));
-                const batchResults = await Promise.all(batch.map(c => testOne(c)));
-                for (const r of batchResults) {
-                    if (r) results.push(r);
-                }
-            }
-
-            results.sort((a, b) => a.latency - b.latency);
-            activeConfigs = results.slice(0, settings.topCount);
-
-            const resultsList = document.getElementById('resultsList');
-            if (!activeConfigs.length) {
-                resultsList.innerHTML = '<div class="result-item">❌ کانفیگ فعالی پیدا نشد</div>';
-            } else {
-                for (let i = 0; i < activeConfigs.length; i++) {
-                    const c = activeConfigs[i];
-                    const medal = i < 3 ? (i === 0 ? '🏆' : i === 1 ? '🥈' : '🥉') : `${i+1}️⃣`;
-                    const div = document.createElement('div');
-                    div.className = 'result-item verified';
-                    div.innerHTML = `${medal} ${c.host}:${c.port} (${c.type}) | ${c.latency}ms | ${c.name}`;
-                    resultsList.appendChild(div);
-                }
-            }
-
-            if (progressLabel) progressLabel.innerHTML = `✅ کامل شد! ${activeConfigs.length} کانفیگ فعال`;
-            updateStatus(`✅ ${activeConfigs.length} کانفیگ فعال پیدا شد`);
-            if (activeConfigs.length) {
-                document.getElementById('saveBtn').disabled = false;
-                refreshTop();
-            }
-
-            isTesting = false;
-            autoBtn.innerHTML = '▶ شروع تست';
-            autoBtn.className = 'btn btn-primary';
+        function isSubscriptionUrl(input) {
+            return input.startsWith('http://') || input.startsWith('https://');
         }
 
-        // ==================== تست دستی ====================
+        async function fetchConfigsFromUrl(url) {
+            try {
+                const response = await fetch(url);
+                if (response.ok) {
+                    let content = await response.text();
+                    try {
+                        let decoded = atob(content);
+                        if (decoded.includes('://')) content = decoded;
+                    } catch(e) {}
+                    return content.split('\n').filter(l => l.trim() && (l.includes('vmess://') || l.includes('vless://') || l.includes('trojan://')));
+                }
+            } catch(e) {}
+            return [];
+        }
+
         async function startManualTest() {
-            const input = document.getElementById('manualConfig').value.trim();
-            if (!input) { alert('کانفیگ وارد کنید'); return; }
+            if (isFirefox) {
+                alert('⚠️ توجه: در مرورگر فایرفاکس تست واقعی ممکن است با مشکل مواجه شود.\n\nپیشنهاد می‌شود از کروم یا اج استفاده کنید.');
+            }
+            
+            const inputText = document.getElementById('manualConfig').value.trim();
+            if (!inputText) {
+                alert('لطفاً کانفیگ یا لینک سابسکریپشن وارد کنید!');
+                return;
+            }
 
-            const isUrl = input.startsWith('http://') || input.startsWith('https://');
-            let configs = [];
+            const resultDiv = document.getElementById('manualResult');
+            resultDiv.innerHTML = '<div style="text-align:center;">🔍 در حال پردازش...</div>';
+            updateStatus('🔄 در حال تست دستی...');
 
-            if (isUrl) {
-                try {
-                    const res = await fetch(input);
-                    if (res.ok) {
-                        let content = await res.text();
-                        try { content = atob(content); } catch (e) {}
-                        configs = content.split('\n').filter(l => l.trim() && l.includes('://'));
-                        addLog(`📥 ${configs.length} کانفیگ از لینک دریافت شد`, 'info');
-                    }
-                } catch (e) {
-                    alert('خطا در دریافت لینک');
+            let configsToTest = [];
+            if (isSubscriptionUrl(inputText)) {
+                configsToTest = await fetchConfigsFromUrl(inputText);
+                if (configsToTest.length === 0) {
+                    resultDiv.innerHTML = '<div class="result-item dead">❌ هیچ کانفیگی دریافت نشد!</div>';
                     return;
                 }
             } else {
-                configs = input.split('\n').filter(l => l.trim() && l.includes('://'));
-            }
-
-            if (!configs.length) { alert('کانفیگی یافت نشد'); return; }
-
-            const resultDiv = document.getElementById('manualResult');
-            resultDiv.innerHTML = '';
-            let live = 0;
-
-            for (let i = 0; i < configs.length; i++) {
-                const config = configs[i];
-                const parsed = parseConfig(config);
-                if (parsed) {
-                    const { host, port, name, type } = parsed;
-                    resultDiv.innerHTML +=
-                        `<div class="result-item">🔄 تست ${i+1}/${configs.length}: ${host}:${port}</div>`;
-                    resultDiv.scrollTop = resultDiv.scrollHeight;
-                    try {
-                        const result = await testTCPConnection(host, port, 3);
-                        if (result.alive) {
-                            live++;
-                            const last = resultDiv.lastChild;
-                            if (last) last.outerHTML =
-                                `<div class="result-item verified">✅ ${host}:${port} (${type}) | ${result.latency}ms | ${name}</div>`;
-                        } else {
-                            const last = resultDiv.lastChild;
-                            if (last) last.outerHTML =
-                                `<div class="result-item dead">❌ ${host}:${port} | مرده</div>`;
-                        }
-                    } catch (e) {
-                        const last = resultDiv.lastChild;
-                        if (last) last.outerHTML = `<div class="result-item dead">❌ ${host}:${port} | خطا</div>`;
-                    }
-                } else {
-                    resultDiv.innerHTML += `<div class="result-item dead">❌ فرمت نامعتبر</div>`;
+                configsToTest = inputText.split('\n').filter(l => l.trim() && l.includes('://'));
+                if (configsToTest.length === 0) {
+                    resultDiv.innerHTML = '<div class="result-item dead">❌ هیچ کانفیگ معتبری یافت نشد!</div>';
+                    return;
                 }
             }
-            resultDiv.innerHTML +=
-                `<div class="result-item verified" style="text-align:center;">📊 ${live}/${configs.length} کانفیگ فعال</div>`;
-        }
 
-        // ==================== QR Code ====================
-        function createQRCode(id, text) {
-            const container = document.getElementById(id);
-            if (!container) return;
-            container.innerHTML = '';
-            try {
-                let t = text.length > 2000 ? text.substring(0, 1900) : text;
-                new QRCode(container, { text: t, width: 120, height: 120, correctLevel: QRCode.CorrectLevel.L });
-            } catch (e) {
-                container.innerHTML = '<div class="qr-error">❌</div>';
+            resultDiv.innerHTML = '';
+            let liveCount = 0;
+
+            for (let i = 0; i < configsToTest.length; i++) {
+                const config = configsToTest[i];
+                const extracted = extractHostPort(config);
+                
+                if (extracted) {
+                    const { host, port, name, type } = extracted;
+                    resultDiv.innerHTML += `<div class="result-item">🔄 تست ${i+1}/${configsToTest.length}: ${host}:${port} (${type})...</div>`;
+                    resultDiv.scrollTop = resultDiv.scrollHeight;
+                    
+                    try {
+                        const response = await fetchWithTimeout(`${API_URL}/test-config`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ config: config, timeout: 10 })
+                        }, 15000);
+                        const result = await response.json();
+                        const location = await getLocationForHost(host);
+                        
+                        if (result.alive) {
+                            liveCount++;
+                            const latencyDisplay = (result.latency === -1) ? 'نامشخص' : `${result.latency}ms`;
+                            resultDiv.innerHTML = resultDiv.innerHTML.replace(`🔄 تست ${i+1}/${configsToTest.length}: ${host}:${port} (${type})...`, 
+                                `✅ تأیید شد: ${location} | ${host}:${port} (${type}) | ${latencyDisplay} | ${name}`);
+                        } else {
+                            resultDiv.innerHTML = resultDiv.innerHTML.replace(`🔄 تست ${i+1}/${configsToTest.length}: ${host}:${port} (${type})...`, 
+                                `❌ رد شد: ${location} | ${host}:${port} (${type}) | دلیل: ${result.message || 'نامشخص'}`);
+                        }
+                    } catch(e) {
+                        resultDiv.innerHTML = resultDiv.innerHTML.replace(`🔄 تست ${i+1}/${configsToTest.length}: ${host}:${port} (${type})...`, 
+                            `❌ خطا: ${host}:${port} | ${e.message}`);
+                    }
+                } else {
+                    resultDiv.innerHTML += `<div class="result-item dead">❌ فرمت نامعتبر: ${config.substring(0, 80)}...</div>`;
+                }
+                resultDiv.scrollTop = resultDiv.scrollHeight;
             }
+
+            resultDiv.innerHTML += `<div class="result-item verified" style="margin-top:15px; text-align:center;">📊 خلاصه: ${liveCount} کانفیگ ۱۰۰٪ تضمینی از ${configsToTest.length}</div>`;
+            updateStatus(`✅ تست دستی کامل شد - ${liveCount} کانفیگ تأیید شده`);
         }
 
-        function escapeHtml(s) {
-            if (!s) return '';
-            return s.replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;');
+    
+
+// ==================== تابع QR Code اصلاح شده نهایی ====================
+function createQRCode(elementId, text) {
+    const container = document.getElementById(elementId);
+    if (!container) {
+        console.error('عنصر یافت نشد:', elementId);
+        return false;
+    }
+    
+    container.innerHTML = '';
+    
+    try {
+        let qrText = text;
+        
+        // محدودیت طول برای QR Code
+        if (qrText.length > 2000) {
+            qrText = qrText.substring(0, 1950) + '...';
+        }
+        
+        new QRCode(container, {
+            text: qrText,
+            width: 120,
+            height: 120,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.L
+        });
+        return true;
+        
+    } catch(e) {
+        console.error('QR Error:', e);
+        container.innerHTML = '<div class="qr-error" style="font-size:11px;color:#f38ba8;">❌</div>';
+        return false;
+    }
+}
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
         }
 
-        function refreshTop() {
-            const grid = document.getElementById('topGrid');
-            if (!grid) return;
-            grid.innerHTML = '';
-            if (!activeConfigs.length) {
-                grid.innerHTML = '<div style="text-align:center;padding:40px;">⚠️ کانفیگی وجود ندارد</div>';
+        // ==================== ذخیره کانفیگ‌های یک دسته ====================
+        function saveLocationConfigs(location, configs) {
+            if (!configs.length) {
+                alert('هیچ کانفیگی در این دسته وجود ندارد!');
                 return;
             }
+            
+            let text = `# V2Ray Configs - کانفیگ‌های ${location}\n`;
+            text += `# تاریخ: ${new Date().toLocaleString()}\n`;
+            text += `# تعداد: ${configs.length}\n\n`;
+            
+            configs.forEach((c, i) => {
+                const latencyDisplay = (c.latency === 999 || c.latency === -1) ? 'نامشخص' : `${c.latency}ms`;
+                text += `# ${i+1}. ${c.host}:${c.port} (${c.type}) - ${latencyDisplay} - ${c.name}\n${c.config}\n\n`;
+            });
+            
+            const blob = new Blob([text], { type: 'text/plain' });
+            const a = document.createElement('a');
+            const safeName = location.replace(/[^a-zA-Z0-9\u0600-\u06FF]/g, '_');
+            a.download = `v2ray_${safeName}_${new Date().toISOString().slice(0,19)}.txt`;
+            a.href = URL.createObjectURL(blob);
+            a.click();
+            URL.revokeObjectURL(a.href);
+            
+            updateStatus(`💾 ${configs.length} کانفیگ از ${location} ذخیره شد`);
+        }
 
-            for (let i = 0; i < activeConfigs.length; i++) {
-                const c = activeConfigs[i];
-                const qid = `qr-${Date.now()}-${i}`;
-                const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`;
-                const rankColor = i === 0 ? '#f9e2af' : i === 1 ? '#cba6f7' : i === 2 ? '#fab387' : '#89b4fa';
-                const card = document.createElement('div');
-                card.className = 'qr-card';
-                card.innerHTML = `
-                    <h3 style="color:${rankColor}">${medal} ${escapeHtml(c.name)} (${c.type})</h3>
-                    <p>📍 ${c.host}:${c.port}</p>
-                    <p>⚡ ${c.latency}ms</p>
-                    <div class="qr-code" id="${qid}"></div>
-                    <button class="btn btn-primary" onclick="copyConfig('${escapeHtml(c.config).replace(/'/g,"\\'")}')">📋 کپی</button>
-                `;
-                grid.appendChild(card);
-                setTimeout(() => createQRCode(qid, c.config), 100);
+     // ==================== دسته‌بندی لوکیشن با دکمه ذخیره ====================
+function refreshLocationGroups() {
+    const grid = document.getElementById('locationGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    
+    if (!activeConfigs.length) {
+        grid.innerHTML = '<div style="text-align:center; padding:40px;">⚠️ هنوز کانفیگ ۱۰۰٪ تضمینی وجود ندارد! لطفاً ابتدا تست واقعی را انجام دهید.</div>';
+        return;
+    }
+    
+    // گروه‌بندی بر اساس لوکیشن
+    const groups = new Map();
+    for (const cfg of activeConfigs) {
+        const loc = cfg.location || '🌍 نامشخص';
+        if (!groups.has(loc)) groups.set(loc, []);
+        groups.get(loc).push(cfg);
+    }
+    
+    // مرتب‌سازی گروه‌ها
+    const sortedGroups = Array.from(groups.keys()).sort();
+    
+    for (const location of sortedGroups) {
+        const configs = groups.get(location);
+        const groupId = `loc-group-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+        
+        const wrapper = document.createElement('div');
+        wrapper.className = 'location-group';
+        wrapper.innerHTML = `
+            <div class="location-header" onclick="toggleLocationGroup('${groupId}')">
+                <span>${location}</span>
+                <span class="count">${configs.length} کانفیگ</span>
+                <span class="arrow">▼</span>
+                <button class="save-location-btn" id="save-btn-${groupId}">💾 ذخیره این دسته</button>
+            </div>
+            <div id="${groupId}" class="location-configs"><div class="qr-grid"></div></div>
+        `;
+        
+        // اتصال event listener به دکمه ذخیره (به جای onclick در HTML)
+        const saveBtn = wrapper.querySelector(`#save-btn-${groupId}`);
+        if (saveBtn) {
+            saveBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                saveLocationConfigs(location, configs);
+            });
+        }
+        
+        const qrContainer = wrapper.querySelector('.qr-grid');
+        for (let i = 0; i < configs.length; i++) {
+            const c = configs[i];
+            const qrId = `loc-qr-${Date.now()}-${i}-${Math.random().toString(36).substr(2, 4)}`;
+            const latencyDisplay = (c.latency === 999 || c.latency === -1) ? 'نامشخص' : `${c.latency}ms`;
+            const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`;
+            const medalColor = i === 0 ? '#f9e2af' : i === 1 ? '#cba6f7' : i === 2 ? '#fab387' : '#89b4fa';
+            
+            const card = document.createElement('div');
+            card.className = 'qr-card';
+            card.innerHTML = `
+                <h3 style="color: ${medalColor};">${medal} ${escapeHtml(c.name)} (${c.type})</h3>
+                <p>📍 ${c.host}:${c.port}</p>
+                <p>⚡ تاخیر: ${latencyDisplay}</p>
+                <p>🗺️ ${c.location}</p>
+                <div class="qr-code" id="${qrId}"></div>
+                <button class="btn btn-primary" onclick="copyConfig('${escapeHtml(c.config).replace(/'/g, "\\'")}')">📋 کپی کانفیگ</button>
+                <p style="font-size:0.65em; margin-top:10px; word-break:break-all; color:#a6adc8;">${c.config.substring(0, 55)}...</p>
+            `;
+            qrContainer.appendChild(card);
+            
+            // استفاده از setTimeout به جای requestAnimationFrame
+            setTimeout(() => {
+                createQRCode(qrId, c.config);
+            }, 100);
+        }
+        grid.appendChild(wrapper);
+    }
+}
+        
+        function toggleLocationGroup(groupId) {
+            const el = document.getElementById(groupId);
+            if (el) {
+                el.classList.toggle('collapsed');
+                const arrow = el.parentElement.querySelector('.arrow');
+                if (arrow) arrow.innerHTML = el.classList.contains('collapsed') ? '▶' : '▼';
             }
         }
 
-        // ==================== توابع عمومی ====================
-        function copyConfig(c) {
-            navigator.clipboard.writeText(c);
-            alert('✅ کپی شد!');
+      // ==================== 10 کانفیگ برتر ====================
+function refreshTop10() {
+    const grid = document.getElementById('top10Grid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    
+    if (!activeConfigs.length) {
+        grid.innerHTML = '<div style="text-align:center; padding:40px;">⚠️ هنوز کانفیگ ۱۰۰٪ تضمینی وجود ندارد! لطفاً ابتدا تست واقعی را انجام دهید.</div>';
+        return;
+    }
+    
+    const top10 = activeConfigs.slice(0, 10);
+    
+    for (let i = 0; i < top10.length; i++) {
+        const c = top10[i];
+        const qrId = `top10-qr-${Date.now()}-${i}-${Math.random().toString(36).substr(2, 4)}`;
+        const latencyDisplay = (c.latency === 999 || c.latency === -1) ? 'نامشخص' : `${c.latency}ms`;
+        const rank = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}️⃣`;
+        const rankColor = i === 0 ? '#f9e2af' : i === 1 ? '#cba6f7' : i === 2 ? '#fab387' : '#89b4fa';
+        
+        const card = document.createElement('div');
+        card.className = 'qr-card';
+        card.innerHTML = `
+            <h3 style="color: ${rankColor};">${rank} ${escapeHtml(c.name)} (${c.type})</h3>
+            <p>📍 ${c.host}:${c.port}</p>
+            <p>⚡ تاخیر: ${latencyDisplay}</p>
+            <p>🗺️ ${c.location || '🌍 نامشخص'}</p>
+            <div class="qr-code" id="${qrId}"></div>
+            <button class="btn btn-primary" onclick="copyConfig('${escapeHtml(c.config).replace(/'/g, "\\'")}')">📋 کپی کانفیگ</button>
+            <p style="font-size:0.65em; margin-top:10px; word-break:break-all; color:#a6adc8;">${c.config.substring(0, 55)}...</p>
+        `;
+        grid.appendChild(card);
+        
+        setTimeout(() => {
+            createQRCode(qrId, c.config);
+        }, 100);
+    }
+}
+
+        function copyConfig(config) {
+            navigator.clipboard.writeText(config).then(() => {
+                updateStatus('✅ کانفیگ کپی شد!');
+                alert('✅ کانفیگ کپی شد!');
+            }).catch(() => alert('خطا در کپی'));
         }
 
         function saveConfigs() {
-            if (!activeConfigs.length) { alert('کانفیگی نیست'); return; }
-            let txt = `# V2Ray Configs\n# تاریخ: ${new Date().toLocaleString()}\n# تعداد: ${activeConfigs.length}\n\n`;
+            if (!activeConfigs.length) { alert('هیچ کانفیگی وجود ندارد!'); return; }
+            let text = '# V2Ray Configs - کانفیگ‌های تضمینی\n';
+            text += `# تاریخ: ${new Date().toLocaleString()}\n# تعداد: ${activeConfigs.length}\n\n`;
             activeConfigs.forEach((c, i) => {
-                txt += `# ${i+1}. ${c.host}:${c.port} (${c.type}) - ${c.latency}ms\n${c.config}\n\n`;
+                const latencyDisplay = (c.latency === 999) ? 'نامشخص' : `${c.latency}ms`;
+                text += `# ${i+1}. ${c.location} | ${c.host}:${c.port} (${c.type}) - ${latencyDisplay}\n${c.config}\n\n`;
             });
+            const blob = new Blob([text], { type: 'text/plain' });
             const a = document.createElement('a');
-            a.href = URL.createObjectURL(new Blob([txt], { type: 'text/plain' }));
-            a.download = `v2ray_${new Date().toISOString().slice(0,19)}.txt`;
+            a.href = URL.createObjectURL(blob);
+            a.download = `v2ray_verified_${new Date().toISOString().slice(0,19)}.txt`;
             a.click();
             URL.revokeObjectURL(a.href);
-            updateStatus('💾 ذخیره شد');
+            updateStatus('💾 کانفیگ‌ها ذخیره شدند');
         }
 
         function clearManual() {
@@ -861,81 +1281,89 @@
         function switchTab(tab) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            
             if (tab === 'auto') {
                 document.getElementById('autoTab').classList.add('active');
                 document.querySelector('.tab-btn').classList.add('active');
             } else if (tab === 'manual') {
                 document.getElementById('manualTab').classList.add('active');
                 document.querySelectorAll('.tab-btn')[1].classList.add('active');
-            } else {
-                document.getElementById('topTab').classList.add('active');
+            } else if (tab === 'location') {
+                document.getElementById('locationTab').classList.add('active');
                 document.querySelectorAll('.tab-btn')[2].classList.add('active');
-                refreshTop();
+                refreshLocationGroups();
+            } else if (tab === 'top10') {
+                document.getElementById('top10Tab').classList.add('active');
+                document.querySelectorAll('.tab-btn')[3].classList.add('active');
+                refreshTop10();
             }
         }
 
-        // ==================== تنظیمات ====================
         function loadSettings() {
-            const saved = localStorage.getItem('v2ray_settings');
+            const saved = localStorage.getItem('v2ray_real_settings');
             if (saved) {
                 try {
-                    const p = JSON.parse(saved);
-                    settings = { ...settings, ...p };
-                } catch (e) {}
+                    const parsed = JSON.parse(saved);
+                    settings = { ...settings, ...parsed };
+                    if (parsed.apiUrl) API_URL = parsed.apiUrl;
+                } catch(e) {}
             }
-            const vm = document.getElementById('setVmess');
-            const vl = document.getElementById('setVless');
-            const tr = document.getElementById('setTrojan');
-            const top = document.getElementById('setTopCount');
-            const to = document.getElementById('setTimeout');
-            if (vm) vm.checked = settings.protocols.vmess;
-            if (vl) vl.checked = settings.protocols.vless;
-            if (tr) tr.checked = settings.protocols.trojan;
-            if (top) top.value = settings.topCount;
-            if (to) to.value = settings.timeout;
+            document.getElementById('protoVmess').checked = settings.protocols.vmess;
+            document.getElementById('protoVless').checked = settings.protocols.vless;
+            document.getElementById('protoTrojan').checked = settings.protocols.trojan;
+            document.getElementById('apiUrl').value = API_URL;
+            document.getElementById('maxConfigs').value = settings.maxConfigs;
+            document.getElementById('maxLatency').value = settings.maxLatency;
         }
 
         function saveSettings() {
-            const vm = document.getElementById('setVmess');
-            const vl = document.getElementById('setVless');
-            const tr = document.getElementById('setTrojan');
-            const top = document.getElementById('setTopCount');
-            const to = document.getElementById('setTimeout');
-
-            if (vm) settings.protocols.vmess = vm.checked;
-            if (vl) settings.protocols.vless = vl.checked;
-            if (tr) settings.protocols.trojan = tr.checked;
-            if (top) settings.topCount = parseInt(top.value);
-            if (to) settings.timeout = parseInt(to.value);
-
-            localStorage.setItem('v2ray_settings', JSON.stringify(settings));
-            updateStatus('✅ تنظیمات ذخیره شد');
+            settings.protocols = {
+                vmess: document.getElementById('protoVmess').checked,
+                vless: document.getElementById('protoVless').checked,
+                trojan: document.getElementById('protoTrojan').checked
+            };
+            settings.maxConfigs = parseInt(document.getElementById('maxConfigs').value);
+            settings.maxLatency = parseInt(document.getElementById('maxLatency').value);
+            API_URL = document.getElementById('apiUrl').value;
+            settings.apiUrl = API_URL;
+            localStorage.setItem('v2ray_real_settings', JSON.stringify(settings));
             closeSettings();
+            updateStatus('✅ تنظیمات ذخیره شد!');
         }
 
         function openSettings() {
             document.getElementById('settingsModal').classList.add('active');
         }
-
         function closeSettings() {
             document.getElementById('settingsModal').classList.remove('active');
         }
 
-        // ==================== راه‌اندازی ====================
-        document.getElementById('autoTestBtn').onclick = startAutoTest;
-        document.getElementById('saveSettingsBtn').onclick = saveSettings;
-
+        // اتصال دکمه تست
+        document.getElementById('autoTestBtn').onclick = startAutoTestWithWake;
+        
+        // بارگذاری تنظیمات
         loadSettings();
-        updateStatus('✅ آماده به کار | تست مستقیم TCP - بدون وابستگی به سرور خارجی');
-
+        
+        // بیدار کردن سرور در پس‌زمینه
+        if (!isFirefox) {
+            setTimeout(() => {
+                checkAndWakeServer(false);
+            }, 1000);
+        }
+        
+        // توابع گلوبال
+        window.toggleLocationGroup = toggleLocationGroup;
+        window.saveLocationConfigs = saveLocationConfigs;
         window.copyConfig = copyConfig;
         window.switchTab = switchTab;
-        window.refreshTop = refreshTop;
+        window.openSettings = openSettings;
+        window.closeSettings = closeSettings;
+        window.closeServerStatusModal = closeServerStatusModal;
+        window.refreshLocationGroups = refreshLocationGroups;
+        window.refreshTop10 = refreshTop10;
         window.startManualTest = startManualTest;
         window.clearManual = clearManual;
         window.saveConfigs = saveConfigs;
-        window.openSettings = openSettings;
-        window.closeSettings = closeSettings;
     </script>
 </body>
 </html>
