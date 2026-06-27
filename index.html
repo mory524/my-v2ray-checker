@@ -977,79 +977,231 @@ async function getLocationForHost(host) {
             return [];
         }
 
-        async function startManualTest() {
-            if (isFirefox) {
-                alert('⚠️ توجه: در مرورگر فایرفاکس تست واقعی ممکن است با مشکل مواجه شود.\n\nپیشنهاد می‌شود از کروم یا اج استفاده کنید.');
-            }
-            
-            const inputText = document.getElementById('manualConfig').value.trim();
-            if (!inputText) {
-                alert('لطفاً کانفیگ یا لینک سابسکریپشن وارد کنید!');
-                return;
-            }
+     // ==================== تست دستی با قابلیت ذخیره و کپی ====================
+let manualOkConfigs = []; // لیست کانفیگ‌های OK در تست دستی
 
-            const resultDiv = document.getElementById('manualResult');
-            resultDiv.innerHTML = '<div style="text-align:center;">🔍 در حال پردازش...</div>';
-            updateStatus('🔄 در حال تست دستی...');
+async function startManualTest() {
+    if (isFirefox) {
+        alert('⚠️ توجه: در مرورگر فایرفاکس تست واقعی ممکن است با مشکل مواجه شود.\n\nپیشنهاد می‌شود از کروم یا اج استفاده کنید.');
+    }
+    
+    const inputText = document.getElementById('manualConfig').value.trim();
+    if (!inputText) {
+        alert('لطفاً کانفیگ یا لینک سابسکریپشن وارد کنید!');
+        return;
+    }
 
-            let configsToTest = [];
-            if (isSubscriptionUrl(inputText)) {
-                configsToTest = await fetchConfigsFromUrl(inputText);
-                if (configsToTest.length === 0) {
-                    resultDiv.innerHTML = '<div class="result-item dead">❌ هیچ کانفیگی دریافت نشد!</div>';
-                    return;
-                }
-            } else {
-                configsToTest = inputText.split('\n').filter(l => l.trim() && l.includes('://'));
-                if (configsToTest.length === 0) {
-                    resultDiv.innerHTML = '<div class="result-item dead">❌ هیچ کانفیگ معتبری یافت نشد!</div>';
-                    return;
-                }
-            }
+    const resultDiv = document.getElementById('manualResult');
+    resultDiv.innerHTML = '<div style="text-align:center;">🔍 در حال پردازش...</div>';
+    updateStatus('🔄 در حال تست دستی...');
 
-            resultDiv.innerHTML = '';
-            let liveCount = 0;
-
-            for (let i = 0; i < configsToTest.length; i++) {
-                const config = configsToTest[i];
-                const extracted = extractHostPort(config);
-                
-                if (extracted) {
-                    const { host, port, name, type } = extracted;
-                    resultDiv.innerHTML += `<div class="result-item">🔄 تست ${i+1}/${configsToTest.length}: ${host}:${port} (${type})...</div>`;
-                    resultDiv.scrollTop = resultDiv.scrollHeight;
-                    
-                    try {
-                        const response = await fetchWithTimeout(`${API_URL}/test-config`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ config: config, timeout: 10 })
-                        }, 15000);
-                        const result = await response.json();
-                        const location = await getLocationForHost(host);
-                        
-                        if (result.alive) {
-                            liveCount++;
-                            const latencyDisplay = (result.latency === -1) ? 'نامشخص' : `${result.latency}ms`;
-                            resultDiv.innerHTML = resultDiv.innerHTML.replace(`🔄 تست ${i+1}/${configsToTest.length}: ${host}:${port} (${type})...`, 
-                                `✅ تأیید شد: ${location} | ${host}:${port} (${type}) | ${latencyDisplay} | ${name}`);
-                        } else {
-                            resultDiv.innerHTML = resultDiv.innerHTML.replace(`🔄 تست ${i+1}/${configsToTest.length}: ${host}:${port} (${type})...`, 
-                                `❌ رد شد: ${location} | ${host}:${port} (${type}) | دلیل: ${result.message || 'نامشخص'}`);
-                        }
-                    } catch(e) {
-                        resultDiv.innerHTML = resultDiv.innerHTML.replace(`🔄 تست ${i+1}/${configsToTest.length}: ${host}:${port} (${type})...`, 
-                            `❌ خطا: ${host}:${port} | ${e.message}`);
-                    }
-                } else {
-                    resultDiv.innerHTML += `<div class="result-item dead">❌ فرمت نامعتبر: ${config.substring(0, 80)}...</div>`;
-                }
-                resultDiv.scrollTop = resultDiv.scrollHeight;
-            }
-
-            resultDiv.innerHTML += `<div class="result-item verified" style="margin-top:15px; text-align:center;">📊 خلاصه: ${liveCount} کانفیگ ۱۰۰٪ تضمینی از ${configsToTest.length}</div>`;
-            updateStatus(`✅ تست دستی کامل شد - ${liveCount} کانفیگ تأیید شده`);
+    let configsToTest = [];
+    if (isSubscriptionUrl(inputText)) {
+        configsToTest = await fetchConfigsFromUrl(inputText);
+        if (configsToTest.length === 0) {
+            resultDiv.innerHTML = '<div class="result-item dead">❌ هیچ کانفیگی دریافت نشد!</div>';
+            return;
         }
+    } else {
+        configsToTest = inputText.split('\n').filter(l => l.trim() && l.includes('://'));
+        if (configsToTest.length === 0) {
+            resultDiv.innerHTML = '<div class="result-item dead">❌ هیچ کانفیگ معتبری یافت نشد!</div>';
+            return;
+        }
+    }
+
+    resultDiv.innerHTML = '';
+    let liveCount = 0;
+    manualOkConfigs = []; // reset لیست
+
+    // دکمه ذخیره و گزارش در بالای نتیجه
+    const actionBar = document.createElement('div');
+    actionBar.style.cssText = `
+        background: #313244;
+        padding: 10px 15px;
+        border-radius: 12px;
+        margin-bottom: 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+    `;
+    actionBar.innerHTML = `
+        <span style="color: #a6adc8; font-size: 0.9em;">📊 کانفیگ‌های OK: <span id="manualOkCount">0</span></span>
+        <button class="btn btn-success btn-sm" id="saveManualOkBtn" style="display:none;" onclick="saveManualOkConfigs()">
+            💾 ذخیره کانفیگ‌های OK
+        </button>
+    `;
+    resultDiv.appendChild(actionBar);
+
+    // کانتینر لیست کانفیگ‌های OK
+    const okListContainer = document.createElement('div');
+    okListContainer.id = 'manualOkList';
+    okListContainer.style.cssText = `
+        margin: 10px 0 15px 0;
+        display: none;
+    `;
+    okListContainer.innerHTML = `
+        <h5 style="color: #a6e3a1; margin-bottom: 10px;">✅ کانفیگ‌های OK (قابل کپی):</h5>
+        <div id="manualOkItems" style="max-height: 200px; overflow-y: auto;"></div>
+    `;
+    resultDiv.appendChild(okListContainer);
+
+    // کانتینر اصلی نتایج تست
+    const resultsContainer = document.createElement('div');
+    resultsContainer.id = 'manualResultsContainer';
+    resultDiv.appendChild(resultsContainer);
+
+    for (let i = 0; i < configsToTest.length; i++) {
+        const config = configsToTest[i];
+        const extracted = extractHostPort(config);
+        
+        if (extracted) {
+            const { host, port, name, type } = extracted;
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'result-item';
+            itemDiv.innerHTML = `🔄 تست ${i+1}/${configsToTest.length}: ${host}:${port} (${type})...`;
+            resultsContainer.appendChild(itemDiv);
+            itemDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            
+            try {
+                const response = await fetchWithTimeout(`${API_URL}/test-config`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ config: config, timeout: 10 })
+                }, 15000);
+                const result = await response.json();
+                const location = await getLocationForHost(host);
+                
+                if (result.alive) {
+                    liveCount++;
+                    const latencyDisplay = (result.latency === -1) ? 'نامشخص' : `${result.latency}ms`;
+                    itemDiv.outerHTML = `
+                        <div class="result-item verified" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                            <span>✅ ${location} | ${host}:${port} (${type}) | ${latencyDisplay} | ${name}</span>
+                            <button class="btn btn-primary btn-sm" onclick="copySingleConfig('${escapeHtml(config).replace(/'/g, "\\'")}')" style="padding:4px 12px; font-size:0.8em;">
+                                📋 کپی
+                            </button>
+                        </div>
+                    `;
+                    // ذخیره در لیست OK
+                    manualOkConfigs.push({ config, host, port, name, type, location, latency: result.latency });
+                } else {
+                    itemDiv.outerHTML = `
+                        <div class="result-item dead">❌ ${location} | ${host}:${port} (${type}) | دلیل: ${result.message || 'نامشخص'}</div>
+                    `;
+                }
+            } catch(e) {
+                itemDiv.outerHTML = `
+                    <div class="result-item dead">❌ ${host}:${port} | خطا: ${e.message}</div>
+                `;
+            }
+        } else {
+            const div = document.createElement('div');
+            div.className = 'result-item dead';
+            div.innerHTML = `❌ فرمت نامعتبر: ${config.substring(0, 80)}...`;
+            resultsContainer.appendChild(div);
+        }
+        resultsContainer.scrollTop = resultsContainer.scrollHeight;
+    }
+
+    // بروزرسانی آمار و نمایش لیست OK
+    const okCount = document.getElementById('manualOkCount');
+    if (okCount) okCount.textContent = liveCount;
+    
+    const saveBtn = document.getElementById('saveManualOkBtn');
+    if (saveBtn) {
+        if (liveCount > 0) {
+            saveBtn.style.display = 'inline-block';
+        } else {
+            saveBtn.style.display = 'none';
+        }
+    }
+
+    // نمایش لیست کانفیگ‌های OK
+    const okList = document.getElementById('manualOkList');
+    const okItems = document.getElementById('manualOkItems');
+    if (okList && okItems) {
+        if (manualOkConfigs.length > 0) {
+            okList.style.display = 'block';
+            okItems.innerHTML = '';
+            manualOkConfigs.forEach((c, idx) => {
+                const row = document.createElement('div');
+                row.style.cssText = `
+                    background: #1e1e2e;
+                    padding: 6px 10px;
+                    margin: 4px 0;
+                    border-radius: 8px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    font-size: 0.8em;
+                    font-family: monospace;
+                    word-break: break-all;
+                    gap: 8px;
+                `;
+                row.innerHTML = `
+                    <span style="flex:1; min-width:0;">✅ ${c.location} | ${c.host}:${c.port} (${c.type}) | ${c.latency || '?'}ms</span>
+                    <button class="btn btn-primary btn-sm" onclick="copySingleConfig('${escapeHtml(c.config).replace(/'/g, "\\'")}')" style="padding:2px 10px; font-size:0.7em; white-space:nowrap;">
+                        📋 کپی
+                    </button>
+                `;
+                okItems.appendChild(row);
+            });
+        } else {
+            okList.style.display = 'none';
+        }
+    }
+
+    // خلاصه در پایین
+    const summary = document.createElement('div');
+    summary.className = 'result-item verified';
+    summary.style.cssText = 'margin-top:15px; text-align:center;';
+    summary.innerHTML = `📊 خلاصه: ${liveCount} کانفیگ OK از ${configsToTest.length}`;
+    resultsContainer.appendChild(summary);
+    
+    updateStatus(`✅ تست دستی کامل شد - ${liveCount} کانفیگ OK`);
+}
+
+// ==================== کپی یک کانفیگ ====================
+function copySingleConfig(config) {
+    navigator.clipboard.writeText(config).then(() => {
+        updateStatus('✅ کانفیگ کپی شد!');
+        const btn = event?.target || document.activeElement;
+        if (btn) {
+            const originalText = btn.textContent;
+            btn.textContent = '✅ کپی شد!';
+            setTimeout(() => { btn.textContent = originalText; }, 1500);
+        }
+    }).catch(() => alert('خطا در کپی'));
+}
+
+// ==================== ذخیره همه کانفیگ‌های OK ====================
+function saveManualOkConfigs() {
+    if (!manualOkConfigs.length) {
+        alert('هیچ کانفیگ OK ای برای ذخیره وجود ندارد!');
+        return;
+    }
+    
+    let text = '# V2Ray Configs - کانفیگ‌های OK (تست دستی)\n';
+    text += `# تاریخ: ${new Date().toLocaleString()}\n`;
+    text += `# تعداد: ${manualOkConfigs.length}\n\n`;
+    
+    manualOkConfigs.forEach((c, i) => {
+        const latencyDisplay = (c.latency === -1 || c.latency === null) ? 'نامشخص' : `${c.latency}ms`;
+        text += `# ${i+1}. ${c.location} | ${c.host}:${c.port} (${c.type}) - ${latencyDisplay} - ${c.name}\n${c.config}\n\n`;
+    });
+    
+    const blob = new Blob([text], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `v2ray_manual_ok_${new Date().toISOString().slice(0,19)}.txt`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    
+    updateStatus(`💾 ${manualOkConfigs.length} کانفیگ OK ذخیره شد`);
+}
 
     
 
